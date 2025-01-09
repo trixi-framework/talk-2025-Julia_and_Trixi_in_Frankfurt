@@ -7,7 +7,6 @@
 
 ## Getting started
 
-- TODO: Intro to Julia, static html
 - TODO: Other material
 
 ### Installing Julia
@@ -15,3 +14,11 @@
 To obtain Julia, go to https://julialang.org/downloads/ and download the 
 long-term support (LTS) release v1.10. We recommend to use juliaup as
 described on the website.
+
+### Introduction to Julia
+
+The material for the brief introduction to Julia is contained in the directory
+`introduction_to_julia` in this repository. It is written as a
+[Pluto.jl](https://github.com/fonsp/Pluto.jl) notebook that can be updated
+interactively. You can also see a 
+[static preview online](https://trixi-framework.github.io/talk-2025-Julia_and_Trixi_in_Frankfurt/Introduction_to_Julia.html).
