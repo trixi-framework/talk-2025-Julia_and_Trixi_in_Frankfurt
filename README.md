@@ -4,6 +4,11 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-success.svg)](https://opensource.org/licenses/MIT)
 
+This repository contains some material introducting the programming language
+[Julia](https://julialang.org) and the Julia package
+[Trixi.jl](https://github.com/trixi-framework/Trixi.jl), providing adaptive
+numerical methods for conservation laws in Julia.
+
 
 ## Getting started
 
