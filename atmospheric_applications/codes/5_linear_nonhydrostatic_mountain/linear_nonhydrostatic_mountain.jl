@@ -111,7 +111,7 @@ f4(s) = SVector((s + 1-1) * L/2, H)
 cells_per_dimension = (32.0, 32.0)
 mesh = StructuredMesh(cells_per_dimension, (f1, f2, f3, f4), periodicity = (true, false))
 
-semi = SemidiscretizationHyperbolic(mesh, equations, linear_hydrostatic_setup, solver, source_terms = linear_hydrostatic_setup,
+semi = SemidiscretizationHyperbolic(mesh, equations, linear_nonhydrostatic_setup, solver, source_terms = linear_nonhydrostatic_setup,
                                     boundary_conditions = boundary_conditions)
 
 ###############################################################################
@@ -137,12 +137,16 @@ save_solution = SaveSolutionCallback(interval = analysis_interval,
                                      solution_variables = cons2prim)
 
 stepsize_callback = StepsizeCallback(cfl = 0.5)
+variable_names = ["rho", "v1", "v2", "p"]
+visualization = VisualizationCallback(interval = 100,
+                                      solution_variables = cons2prim,
+                                      variable_names = variable_names)
 
 callbacks = CallbackSet(summary_callback,
                         analysis_callback,
                         alive_callback,
                         save_solution,
-                        stepsize_callback)
+                        stepsize_callback, visualization)
 
 ###############################################################################
 # run the simulation

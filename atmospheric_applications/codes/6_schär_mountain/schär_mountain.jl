@@ -14,7 +14,7 @@ struct AtmoSetup
     Nf::Float64      # 
     z_B::Float64     # start damping layer
     z_T::Float64     # end damping layer
-    function AtmoSetup(; g = 9.81, c_p = 1004.0, c_v = 717.0, gamma = c_p / c_v, p_0 = 100_000.0, theta_0 = 280.0, u0 = 10.0, z_B = 15000.0, z_T = 21000.0)
+    function AtmoSetup(; g = 9.81, c_p = 1004.0, c_v = 717.0, gamma = c_p / c_v, p_0 = 100_000.0, theta_0 = 280.0, u0 = 10.0, z_B = 15000.0, z_T = 30000.0)
         Nf = 0.01
         new(g, c_p, c_v, gamma, p_0, theta_0, u0, Nf, z_B, z_T)
     end
@@ -39,13 +39,13 @@ function (setup::AtmoSetup)(u, x, t, equations::CompressibleEulerEquations2D)
     if x[2] <= z_B
         S_v = 0.0
     elseif (x[2] - z_B)/(z_T - z_B) <= 1/2
-        S_v = -alfa/2 *(1 - cospi((x[2] - z_B)/(z_T - z_B)))
+        S_v = -alfa/2 * (1 - cospi((x[2] - z_B)/(z_T - z_B)))
     else 
         S_v = -alfa/2 * ( 1 + ((x[2] - z_B)/(z_T - z_B) - 1/2))*pi
     end
 
-    xr_B = 20000.0
-    xr_T = 25000.0
+    xr_B = 40000.0
+    xr_T = 50000.0
     if x[1] <= xr_B
         S_h1 = 0.0
     elseif (x[1] - xr_B)/(xr_T - xr_B) <= 1/2
@@ -54,15 +54,15 @@ function (setup::AtmoSetup)(u, x, t, equations::CompressibleEulerEquations2D)
         S_h1 = -alfa/2 * ( 1 + ((x[1] - xr_B)/(xr_T - xr_B) - 1/2))*pi
     end
 
-    if x[1] <= -xr_B
+    if x[1] >= -xr_B
         S_h2 = 0.0
-    elseif -(x[1] + xr_B)/(xr_T - xr_B) <= -1/2
-        S_h2 = -alfa/2 *(1 - cospi((x[1] - xr_B)/(xr_T - xr_B)))
+    elseif (x[1] + xr_B)/(xr_T - xr_B) >= -1/2
+        S_h2 = -alfa/2 *(1 - cospi(-(x[1] + xr_B)/(xr_T - xr_B)))
     else 
-        S_h2 = -alfa/2 * ( 1 - ((x[1] + xr_B)/(xr_T - xr_B) - 1/2))*pi
+        S_h2 = -alfa/2 * ( 1 + (-(x[1] + xr_B)/(xr_T - xr_B) - 1/2))*pi
     end
-
-
+    S_h1 = 0.0
+    S_h2 = 0.0
     K = p_0 * (R/p_0)^gamma
 	du2 = rho * (v1-u0) * (S_v + S_h1 + S_h2)
 	du3 = rho_v2 * (S_v + S_h1 + S_h2) 
@@ -81,7 +81,7 @@ function (setup::AtmoSetup)(x, t, equations::CompressibleEulerEquations2D)
     p_0 = 100_000.0  # reference pressure
     R = c_p - c_v    # gas constant (dry air)
     p = p_0 * exner^(c_p / R)
-    potential_temperature = theta_0
+    potential_temperature = theta_0 * exp(Nf^2/g*x[2])
     T = potential_temperature * exner
     # density
     rho = p / (R * T)
@@ -91,15 +91,14 @@ function (setup::AtmoSetup)(x, t, equations::CompressibleEulerEquations2D)
     return prim2cons(SVector(rho, v1, v2 ,p), equations)
 end
 
-
 ###############################################################################
 # semidiscretization of the compressible Euler equations
 schär_setup = AtmoSetup()
 
 equations = CompressibleEulerEquations2D(schär_setup.gamma)
 
-boundary_conditions = (x_neg = boundary_condition_slip_wall,
-                       x_pos = boundary_condition_slip_wall,
+boundary_conditions = (x_neg = boundary_condition_periodic,
+                       x_pos = boundary_condition_periodic,
                        y_neg = boundary_condition_slip_wall,
                        y_pos = boundary_condition_slip_wall)
 
@@ -115,19 +114,19 @@ solver = DGSEM(basis, surface_flux, volume_integral)
 
 a = 5000.0
 L = 50000.0
-H = 21000.0
+H = 30000.0
 lambda_c = 4000.0
 hc = 250.0
-y_b = hc *exp(-(L/2/a)^2)*cospi(L/2/lambda_c)
+y_b = hc *exp(-(L/2/a)^2)*cospi(L/2/lambda_c)^2
 alfa = (H - y_b) * 0.5
 
 f1(s) = SVector(-L/2, y_b + alfa * (s + 1))
 f2(s) = SVector(L/2, y_b + alfa * (s + 1))
-f3(s) = SVector(s * L/2, hc * exp(-(s * L/2 /a)^2) * cospi(s * L/2 /lambda_c))
+f3(s) = SVector(s * L/2, hc * exp(-(s * L/2 /a)^2) * cospi(s * L/2 /lambda_c)^2)
 f4(s) = SVector(s * L/2, H)
 
-cells_per_dimension = (16.0, 16.0)
-mesh = StructuredMesh(cells_per_dimension, (f1, f2, f3, f4), periodicity = (false, false))
+cells_per_dimension = (32,32)
+mesh = StructuredMesh(cells_per_dimension, (f1, f2, f3, f4), periodicity = (true, false))
 
 semi = SemidiscretizationHyperbolic(mesh, equations, schär_setup, solver, source_terms = schär_setup,
                                     boundary_conditions = boundary_conditions)
@@ -135,7 +134,7 @@ semi = SemidiscretizationHyperbolic(mesh, equations, schär_setup, solver, sourc
 ###############################################################################
 # ODE solvers, callbacks etc.
 
-tspan = (0.0, 10*3600.0)
+tspan = (0.0, 5*3600.0)
 
 ode = semidiscretize(semi, tspan)
 
@@ -154,13 +153,17 @@ save_solution = SaveSolutionCallback(interval = analysis_interval,
                                      output_directory = "6_schär_mountain/out",
                                      solution_variables = cons2prim)
 
-stepsize_callback = StepsizeCallback(cfl = 0.5)
+stepsize_callback = StepsizeCallback(cfl = 0.25)
+variable_names = ["rho", "v1", "v2", "p"]
+visualization = VisualizationCallback(interval = 1,
+                                      solution_variables = cons2prim,
+                                      variable_names = variable_names)
 
 callbacks = CallbackSet(summary_callback,
                         analysis_callback,
                         alive_callback,
                         save_solution,
-                        stepsize_callback)
+                        stepsize_callback, visualization)
 
 ###############################################################################
 # run the simulation
