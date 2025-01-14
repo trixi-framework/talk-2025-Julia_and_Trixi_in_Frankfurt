@@ -2,7 +2,7 @@ using OrdinaryDiffEq
 using Trixi
 using Plots
 
-struct AtmoSetup
+struct SchärSetup
     # Physical constants
     g::Float64       # gravity of earth
     c_p::Float64     # heat capacity for constant pressure (dry air)
@@ -14,14 +14,14 @@ struct AtmoSetup
     Nf::Float64      # 
     z_B::Float64     # start damping layer
     z_T::Float64     # end damping layer
-    function AtmoSetup(; g = 9.81, c_p = 1004.0, c_v = 717.0, gamma = c_p / c_v, p_0 = 100_000.0, theta_0 = 280.0, u0 = 10.0, z_B = 20000.0, z_T = 30000.0)
+    function SchärSetup(; g = 9.81, c_p = 1004.0, c_v = 717.0, gamma = c_p / c_v, p_0 = 100_000.0, theta_0 = 280.0, u0 = 10.0, z_B = 20000.0, z_T = 30000.0)
         Nf = 0.01
         new(g, c_p, c_v, gamma, p_0, theta_0, u0, Nf, z_B, z_T)
     end
 end
 
 
-function (setup::AtmoSetup)(u, x, t, equations::CompressibleEulerEquations2D)
+function (setup::SchärSetup)(u, x, t, equations::CompressibleEulerEquations2D)
     @unpack g, c_p, c_v, gamma, p_0, theta_0, z_B, z_T, Nf, u0 = setup
 
 	rho, rho_v1, rho_v2, rho_e = u
@@ -36,31 +36,9 @@ function (setup::AtmoSetup)(u, x, t, equations::CompressibleEulerEquations2D)
 
     alfa = 0.1
 
-    if x[2] <= z_B
-        S_v = 0.0
-    elseif (x[2] - z_B)/(z_T - z_B) <= 1/2
-        S_v = -alfa/2 * (1 - cospi((x[2] - z_B)/(z_T - z_B)))
-    else 
-        S_v = -alfa/2 * ( 1 + ((x[2] - z_B)/(z_T - z_B) - 1/2))*pi
-    end
-
     xr_B = 20000.0
     xr_T = 25000.0
-    if x[1] <= xr_B
-        S_h1 = 0.0
-    elseif (x[1] - xr_B)/(xr_T - xr_B) <= 1/2
-        S_h1 = -alfa/2 *(1 - cospi((x[1] - xr_B)/(xr_T - xr_B)))
-    else 
-        S_h1 = -alfa/2 * ( 1 + ((x[1] - xr_B)/(xr_T - xr_B) - 1/2))*pi
-    end
 
-    if x[1] >= -xr_B
-        S_h2 = 0.0
-    elseif (x[1] + xr_B)/(xr_T - xr_B) >= -1/2
-        S_h2 = -alfa/2 *(1 - cospi(-(x[1] + xr_B)/(xr_T - xr_B)))
-    else 
-        S_h2 = -alfa/2 * ( 1 + (-(x[1] + xr_B)/(xr_T - xr_B) - 1/2))*pi
-    end
     if x[2] <= z_B
         S_v = 0.0
     else
@@ -87,7 +65,7 @@ function (setup::AtmoSetup)(u, x, t, equations::CompressibleEulerEquations2D)
 
 end
 
-function (setup::AtmoSetup)(x, t, equations::CompressibleEulerEquations2D)
+function (setup::SchärSetup)(x, t, equations::CompressibleEulerEquations2D)
     @unpack g, c_p, c_v, p_0, theta_0, u0, Nf = setup
 
     # Exner pressure, solves hydrostatic equation for x[2]
@@ -108,7 +86,7 @@ end
 
 ###############################################################################
 # semidiscretization of the compressible Euler equations
-schär_setup = AtmoSetup()
+schär_setup = SchärSetup()
 
 equations = CompressibleEulerEquations2D(schär_setup.gamma)
 

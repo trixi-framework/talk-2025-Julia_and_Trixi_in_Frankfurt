@@ -4,7 +4,7 @@ using Plots
 
 # Definition of struct field to collect all the physical parameters and hydrostatic background state
 
-struct AtmoSetup
+struct InertiaSetup
     # Physical constants
     g::Float64       # gravity of earth
     c_p::Float64     # heat capacity for constant pressure (dry air)
@@ -12,13 +12,13 @@ struct AtmoSetup
     gamma::Float64   # heat capacity ratio (dry air)
     p_0::Float64     # atmospheric pressure
     theta_0::Float64  # constant background potential temperature steady state     
-    function AtmoSetup(; g = 9.81, c_p = 1004.0, c_v = 717.0, gamma = c_p / c_v, p_0 = 100_000.0, theta_0 = 300.0)
+    function InertiaSetup(; g = 9.81, c_p = 1004.0, c_v = 717.0, gamma = c_p / c_v, p_0 = 100_000.0, theta_0 = 300.0)
         new(g, c_p, c_v, gamma, p_0, theta_0)
     end
 end
 
 # Initial condition for inertia gravity waves: constant potential temperature background state plus a perturbation
-function (setup::AtmoSetup)(x, t, equations::CompressibleEulerEquations2D)
+function (setup::InertiaSetup)(x, t, equations::CompressibleEulerEquations2D)
     
     @unpack g, c_p, c_v, p_0, theta_0 = setup
     
@@ -49,7 +49,7 @@ function (setup::AtmoSetup)(x, t, equations::CompressibleEulerEquations2D)
 end
 
 # Source terms for the CompressibleEulerEquations2D
-@inline function (setup::AtmoSetup)(u, x, t, equations::CompressibleEulerEquations2D)
+@inline function (setup::InertiaSetup)(u, x, t, equations::CompressibleEulerEquations2D)
     @unpack g = setup
     rho, _, rho_v2, _ = u
     return SVector(zero(eltype(u)), zero(eltype(u)), -g * rho, -g * rho_v2)
@@ -57,9 +57,9 @@ end
 
 ###############################################################################
 # Semidiscretization of the compressible Euler equations
-inertia_gravity_wave_setup = AtmoSetup()
+inertia_gravity_wave_setup = InertiaSetup()
 
-equations = CompressibleEulerEquations2D(warm_bubble_setup.gamma)
+equations = CompressibleEulerEquations2D(inertia_gravity_wave_setup.gamma)
 
 boundary_conditions = (x_neg = boundary_condition_periodic,
                        x_pos = boundary_condition_periodic,
@@ -119,7 +119,7 @@ callbacks = CallbackSet(summary_callback,
 
 ###############################################################################
 # run the simulation
-sol = solve(ode, CarpenterKennedy2N54(williamson_condition = false),
+sol = solve(ode, SSPRK43(thread = OrdinaryDiffEq.True()),
             maxiters = 1.0e7,
             dt = 1.0, # solve needs some value here but it will be overwritten by the stepsize_callback
             save_everystep = false, callback = callbacks);
@@ -130,7 +130,7 @@ summary_callback()
 
 # Compute the potential temperature perturbation
 vertical_velocity = let u = Trixi.wrap_array(sol.u[end], semi)
-    @unpack g, c_p, c_v, p_0, theta_0 = warm_bubble_setup
+    @unpack g, c_p, c_v, p_0, theta_0 = inertia_gravity_wave_setup
     rho = u[1, :, : ,:]
     rho_v2 = u[3, : ,: ,:]
     rho_v2 ./ rho

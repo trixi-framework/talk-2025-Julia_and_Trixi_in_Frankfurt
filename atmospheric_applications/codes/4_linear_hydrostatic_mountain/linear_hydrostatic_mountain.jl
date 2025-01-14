@@ -2,7 +2,7 @@ using OrdinaryDiffEq
 using Trixi
 using Plots
 
-struct AtmoSetup
+struct HydrostaticSetup
     # Physical constants
     g::Float64       # gravity of earth
     c_p::Float64     # heat capacity for constant pressure (dry air)
@@ -14,14 +14,14 @@ struct AtmoSetup
     Nf::Float64      # 
     z_B::Float64     #
     z_T::Float64     #
-    function AtmoSetup(; g = 9.81, c_p = 1004.0, c_v = 717.0, gamma = c_p / c_v, p_0 = 100_000.0, T_0 = 250.0, u0 = 20.0, z_B = 15000.0, z_T = 30000.0)
+    function HydrostaticSetup(; g = 9.81, c_p = 1004.0, c_v = 717.0, gamma = c_p / c_v, p_0 = 100_000.0, T_0 = 250.0, u0 = 20.0, z_B = 15000.0, z_T = 30000.0)
         Nf = g/sqrt(c_p*T_0)
         new(g, c_p, c_v, gamma, p_0, T_0, u0, Nf, z_B, z_T)
     end
 end
 
 
-function (setup::AtmoSetup)(u, x, t, equations::CompressibleEulerEquations2D)
+function (setup::HydrostaticSetup)(u, x, t, equations::CompressibleEulerEquations2D)
     @unpack g, c_p, c_v, gamma, p_0, T_0, z_B, z_T, Nf, u0 = setup
 
 	rho, rho_v1, rho_v2, rho_e = u
@@ -56,7 +56,7 @@ function (setup::AtmoSetup)(u, x, t, equations::CompressibleEulerEquations2D)
 
 end
 
-function (setup::AtmoSetup)(x, t, equations::CompressibleEulerEquations2D)
+function (setup::HydrostaticSetup)(x, t, equations::CompressibleEulerEquations2D)
     @unpack g, c_p, c_v, p_0, T_0, u0, Nf = setup
 
     # Exner pressure, solves hydrostatic equation for x[2]
@@ -77,7 +77,7 @@ end
 
 ###############################################################################
 # semidiscretization of the compressible Euler equations
-linear_hydrostatic_setup = AtmoSetup()
+linear_hydrostatic_setup = HydrostaticSetup()
 
 equations = CompressibleEulerEquations2D(linear_hydrostatic_setup.gamma)
 

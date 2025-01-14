@@ -52,7 +52,7 @@ function (setup::WarmBubbleSetup)(x, t, equations::CompressibleEulerEquations2D)
 
     v1 = 20.0
     v2 = 0.0
-    E = c_v * T + 0.5 * (v1^2 + v2^2)
+   # E = c_v * T + 0.5 * (v1^2 + v2^2)
    # return SVector(rho, rho * v1, rho * v2, rho * E)
     return prim2cons(SVector(rho, v1, v2, p), equations)
 end
@@ -128,7 +128,7 @@ callbacks = CallbackSet(summary_callback,
 
 ###############################################################################
 # run the simulation
-sol = solve(ode, CarpenterKennedy2N54(williamson_condition = false),
+sol = solve(ode, SSPRK43(thread = OrdinaryDiffEq.True()),
             maxiters = 1.0e7,
             dt = 1.0, # solve needs some value here but it will be overwritten by the stepsize_callback
             save_everystep = false, callback = callbacks);

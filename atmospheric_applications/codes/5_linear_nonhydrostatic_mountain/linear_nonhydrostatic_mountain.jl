@@ -2,7 +2,7 @@ using OrdinaryDiffEq
 using Trixi
 using Plots
 
-struct AtmoSetup
+struct NonHydrostaticSetup
     # Physical constants
     g::Float64       # gravity of earth
     c_p::Float64     # heat capacity for constant pressure (dry air)
@@ -14,14 +14,14 @@ struct AtmoSetup
     Nf::Float64      # 
     z_B::Float64     #
     z_T::Float64     #
-    function AtmoSetup(; g = 9.81, c_p = 1004.0, c_v = 717.0, gamma = c_p / c_v, p_0 = 100_000.0, T_0 = 250.0, u0 = 10.0, z_B = 15000.0, z_T = 30000.0)
+    function NonHydrostaticSetup(; g = 9.81, c_p = 1004.0, c_v = 717.0, gamma = c_p / c_v, p_0 = 100_000.0, T_0 = 250.0, u0 = 10.0, z_B = 15000.0, z_T = 30000.0)
         Nf = g/sqrt(c_p*T_0)
         new(g, c_p, c_v, gamma, p_0, T_0, u0, Nf, z_B, z_T)
     end
 end
 
 
-function (setup::AtmoSetup)(u, x, t, equations::CompressibleEulerEquations2D)
+function (setup::NonHydrostaticSetup)(u, x, t, equations::CompressibleEulerEquations2D)
     @unpack g, c_p, c_v, gamma, p_0, T_0, z_B, z_T, Nf, u0 = setup
 
 	rho, rho_v1, rho_v2, rho_e = u
@@ -56,7 +56,7 @@ function (setup::AtmoSetup)(u, x, t, equations::CompressibleEulerEquations2D)
 
 end
 
-function (setup::AtmoSetup)(x, t, equations::CompressibleEulerEquations2D)
+function (setup::NonHydrostaticSetup)(x, t, equations::CompressibleEulerEquations2D)
     @unpack g, c_p, c_v, p_0, T_0, u0, Nf = setup
 
     # Exner pressure, solves hydrostatic equation for x[2]
@@ -77,7 +77,7 @@ end
 
 ###############################################################################
 # semidiscretization of the compressible Euler equations
-linear_nonhydrostatic_setup = AtmoSetup()
+linear_nonhydrostatic_setup = NonHydrostaticSetup()
 
 equations = CompressibleEulerEquations2D(linear_nonhydrostatic_setup.gamma)
 
@@ -173,7 +173,7 @@ savefig(a,"test_sol_mountain_nc_funzionante_nonlinear.pdf")
 
 # Compute the potential temperature perturbation
 horizontal_velocity = let u = Trixi.wrap_array(sol.u[end], semi)
-    @unpack u0 = linear_hydrostatic_setup
+    @unpack u0 = linear_nonhydrostatic_setup
     rho = u[1, :, : ,:]
     rho_v1 = u[2, : ,: ,:]
     rho_v1 ./ rho .- u0

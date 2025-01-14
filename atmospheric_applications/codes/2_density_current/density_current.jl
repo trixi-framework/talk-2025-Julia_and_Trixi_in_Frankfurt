@@ -4,7 +4,7 @@ using Plots
 
 # Definition of struct field to collect all the physical parameters and hydrostatic background state
 
-struct AtmoSetup
+struct DensitySetup
     # Physical constants
     g::Float64       # gravity of earth
     c_p::Float64     # heat capacity for constant pressure (dry air)
@@ -12,13 +12,13 @@ struct AtmoSetup
     gamma::Float64   # heat capacity ratio (dry air)
     p_0::Float64     # atmospheric pressure
     theta_0::Float64  # constant background potential temperature steady state     
-    function AtmoSetup(; g = 9.81, c_p = 1004.0, c_v = 717.0, gamma = c_p / c_v, p_0 = 100_000.0, theta_0 = 300.0)
+    function DensitySetup(; g = 9.81, c_p = 1004.0, c_v = 717.0, gamma = c_p / c_v, p_0 = 100_000.0, theta_0 = 300.0)
         new(g, c_p, c_v, gamma, p_0, theta_0)
     end
 end
 
 # Initial condition for density current: constant potential temperature background state plus a perturbation
-function (setup::AtmoSetup)(x, t,
+function (setup::DensitySetup)(x, t,
 	equations::CompressibleEulerEquations2D)
 
     @unpack g, c_p, c_v, p_0, theta_0 = setup
@@ -59,7 +59,7 @@ function (setup::AtmoSetup)(x, t,
 end
 
 # Source terms for the CompressibleEulerEquations2D
-@inline function (setup::AtmoSetup)(u, x, t, equations::CompressibleEulerEquations2D)
+@inline function (setup::DensitySetup)(u, x, t, equations::CompressibleEulerEquations2D)
     @unpack g = setup
     rho, _, rho_v2, _ = u
     return SVector(zero(eltype(u)), zero(eltype(u)), -g * rho, -g * rho_v2)
@@ -83,9 +83,9 @@ end
 
 ###############################################################################
 # Semidiscretization of the compressible Euler equations
-density_current_setup = AtmoSetup()
+density_current_setup = DensitySetup()
 
-equations = CompressibleEulerEquations2D(inertia_gravity_wave_setup.gamma)
+equations = CompressibleEulerEquations2D(density_current_setup.gamma)
 
 boundary_conditions = (x_neg = boundary_condition_slip_wall,
                        x_pos = boundary_condition_slip_wall,
@@ -109,8 +109,8 @@ cells_per_dimension = (128, 64)
 mesh = StructuredMesh(cells_per_dimension, coordinates_min, coordinates_max,
                       periodicity = (false, false))
 
-semi = SemidiscretizationHyperbolic(mesh, equations, inertia_gravity_wave_setup, solver,
-                                    source_terms = inertia_gravity_wave_setup,
+semi = SemidiscretizationHyperbolic(mesh, equations, density_current_wave_setup, solver,
+                                    source_terms = density_current_wave_setup,
                                     boundary_conditions = boundary_conditions)
 
 ###############################################################################
@@ -149,7 +149,7 @@ callbacks = CallbackSet(summary_callback,
 
 ###############################################################################
 # run the simulation
-sol = solve(ode, CarpenterKennedy2N54(williamson_condition = false),
+sol = solve(ode, SSPRK43(thread = OrdinaryDiffEq.True()),
             maxiters = 1.0e7,
             dt = 1.0, # solve needs some value here but it will be overwritten by the stepsize_callback
             save_everystep = false, callback = callbacks);
