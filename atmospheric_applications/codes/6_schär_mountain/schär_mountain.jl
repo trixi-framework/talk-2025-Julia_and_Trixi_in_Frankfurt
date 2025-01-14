@@ -14,7 +14,7 @@ struct AtmoSetup
     Nf::Float64      # 
     z_B::Float64     # start damping layer
     z_T::Float64     # end damping layer
-    function AtmoSetup(; g = 9.81, c_p = 1004.0, c_v = 717.0, gamma = c_p / c_v, p_0 = 100_000.0, theta_0 = 280.0, u0 = 10.0, z_B = 15000.0, z_T = 30000.0)
+    function AtmoSetup(; g = 9.81, c_p = 1004.0, c_v = 717.0, gamma = c_p / c_v, p_0 = 100_000.0, theta_0 = 280.0, u0 = 10.0, z_B = 20000.0, z_T = 30000.0)
         Nf = 0.01
         new(g, c_p, c_v, gamma, p_0, theta_0, u0, Nf, z_B, z_T)
     end
@@ -44,8 +44,8 @@ function (setup::AtmoSetup)(u, x, t, equations::CompressibleEulerEquations2D)
         S_v = -alfa/2 * ( 1 + ((x[2] - z_B)/(z_T - z_B) - 1/2))*pi
     end
 
-    xr_B = 40000.0
-    xr_T = 50000.0
+    xr_B = 20000.0
+    xr_T = 25000.0
     if x[1] <= xr_B
         S_h1 = 0.0
     elseif (x[1] - xr_B)/(xr_T - xr_B) <= 1/2
@@ -61,14 +61,29 @@ function (setup::AtmoSetup)(u, x, t, equations::CompressibleEulerEquations2D)
     else 
         S_h2 = -alfa/2 * ( 1 + (-(x[1] + xr_B)/(xr_T - xr_B) - 1/2))*pi
     end
-    S_h1 = 0.0
-    S_h2 = 0.0
+    if x[2] <= z_B
+        S_v = 0.0
+    else
+        S_v = -alfa * sinpi(0.5*(x[2] - z_B)/(z_T - z_B))^2
+    end
+    if x[1] < xr_B
+        S_h1 = 0.0
+    else
+        S_h1 = -alfa * sinpi(0.5*(x[1] - xr_B)/(xr_T - xr_B))^2
+    end
+
+    if x[1] > -xr_B
+        S_h2 = 0.0
+    else
+        S_h2 = -alfa * sinpi(0.5*(x[1] + xr_B)/(-xr_T + xr_B))^2
+    end
+
     K = p_0 * (R/p_0)^gamma
 	du2 = rho * (v1-u0) * (S_v + S_h1 + S_h2)
 	du3 = rho_v2 * (S_v + S_h1 + S_h2) 
 	du4 = rho * (theta-theta_0) * (S_v + S_h1 + S_h2) * K * gamma/(gamma - 1.0) * (rho_theta)^(gamma - 1.0)  + du2 * v1 + du3 * v2
 
-	return SVector(zero(eltype(u)), du2, du3 - g * rho, du4 - g * rho_v2)
+	return SVector(zero(eltype(u)), du2, du3 - g * rho, du4*0.0 - g * rho_v2)
 
 end
 
@@ -125,7 +140,7 @@ f2(s) = SVector(L/2, y_b + alfa * (s + 1))
 f3(s) = SVector(s * L/2, hc * exp(-(s * L/2 /a)^2) * cospi(s * L/2 /lambda_c)^2)
 f4(s) = SVector(s * L/2, H)
 
-cells_per_dimension = (32,32)
+cells_per_dimension = (32, 32)
 mesh = StructuredMesh(cells_per_dimension, (f1, f2, f3, f4), periodicity = (true, false))
 
 semi = SemidiscretizationHyperbolic(mesh, equations, schär_setup, solver, source_terms = schär_setup,
@@ -134,7 +149,7 @@ semi = SemidiscretizationHyperbolic(mesh, equations, schär_setup, solver, sourc
 ###############################################################################
 # ODE solvers, callbacks etc.
 
-tspan = (0.0, 5*3600.0)
+tspan = (0.0, 5*3600.0) #5 hours.
 
 ode = semidiscretize(semi, tspan)
 
@@ -153,11 +168,7 @@ save_solution = SaveSolutionCallback(interval = analysis_interval,
                                      output_directory = "6_schär_mountain/out",
                                      solution_variables = cons2prim)
 
-stepsize_callback = StepsizeCallback(cfl = 0.25)
-variable_names = ["rho", "v1", "v2", "p"]
-visualization = VisualizationCallback(interval = 1,
-                                      solution_variables = cons2prim,
-                                      variable_names = variable_names)
+stepsize_callback = StepsizeCallback(cfl = 0.5)
 
 callbacks = CallbackSet(summary_callback,
                         analysis_callback,
@@ -174,17 +185,6 @@ SSPRK43(thread = OrdinaryDiffEq.True()),
             save_everystep = false, callback = callbacks);
 
 summary_callback()
-
-pd = PlotData2D(sol)
-a = plot(pd["v2"], aspect_ratio = 20)
-savefig(a,"schär_v2.pdf")
-
-a = plot(pd["v1"], aspect_ratio = 20)
-savefig(a,"schär_v1.pdf")
-
-a = plot(sol, aspect_ratio = 20)
-savefig(a,"schär_sol.pdf")
-
 
 # Visulization: 
 
