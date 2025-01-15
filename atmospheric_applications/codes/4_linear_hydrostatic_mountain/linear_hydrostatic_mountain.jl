@@ -108,7 +108,7 @@ f2(s) = SVector(L/2, y_b + alfa * (s + 1))
 f3(s) = SVector((s + 1-1) * L/2, peak / (1 + ((s + 1-1) * L/2)^2 / a^2))
 f4(s) = SVector((s + 1-1) * L/2, H)
 
-cells_per_dimension = (32.0, 32.0)
+cells_per_dimension = (32, 32)
 mesh = StructuredMesh(cells_per_dimension, (f1, f2, f3, f4), periodicity = (true, false))
 
 semi = SemidiscretizationHyperbolic(mesh, equations, linear_hydrostatic_setup, solver, source_terms = linear_hydrostatic_setup,

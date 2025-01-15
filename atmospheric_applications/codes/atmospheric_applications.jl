@@ -180,6 +180,9 @@ pd = PlotData2D(sol)
 plot(getmesh(pd))
 end
 
+# ╔═╡ 14670101-6792-4587-8efb-865627b4e446
+md"### Initial condition rising bubble"
+
 # ╔═╡ 54b02548-63e0-4b07-b982-56c51e6f450a
 begin
 theta_perturb_0 = let u = Trixi.wrap_array(sol.u[1], semi)
@@ -199,6 +202,9 @@ end
 
 plot(ScalarPlotData2D(theta_perturb_0, semi), title = "Potential Temperature perturbation [K], t = 0")
 end
+
+# ╔═╡ 695bf5b1-2f99-4f92-8c35-2eb0279a5663
+md"### Solution at t = 1000s  rising bubble"
 
 # ╔═╡ e6cdc448-565e-4e50-a726-75847ef13bc5
 begin
@@ -288,7 +294,7 @@ semi_amr = SemidiscretizationHyperbolic(mesh_amr,
 									solver,
                                     source_terms = source_terms_gravity,
                                     boundary_conditions = boundary_conditions_amr)
-ode_amr = semidiscretize(semi_amr, (0.0, 1000.0))	
+ode_amr = semidiscretize(semi_amr, (0.0, 1000.0)); nothing	
 end
 
 # ╔═╡ 498d3262-df89-408e-8ede-f32268894709
@@ -319,32 +325,6 @@ amr_callback = AMRCallback(semi_amr, amr_controller,
 	adapt_initial_condition_only_refine = true)
 end
 
-# ╔═╡ f3e2f824-dbdc-4748-88a3-ba8ba7e7ddb0
-begin
-	@inline function cons2perturb(u, equations::CompressibleEulerEquations2D)
-	   	c_p = 1004.0
-		c_v = 717.0
-		p_0 = 100_000.0
-	    R = c_p - c_v
-		theta_0 = 300.0
-	    rho, rho_v1, rho_v2, rho_e = u
-	    v1 = rho_v1 / rho
-		v2 = rho_v2 / rho
-	    p = (equations.gamma - 1) * (rho_e - 0.5 * (rho_v1 * v1 + rho_v2 * v2))
-		rho_theta =  (p / p_0)^(c_v / c_p) * p_0 / R
-	    theta = rho_theta/rho - theta_0
-	
-	    return  rho, v1, v2, theta
-	
-	end
-	
-	@inline Trixi.varnames(::typeof(cons2perturb), ::CompressibleEulerEquations2D) = ("rho", "v1", "v2", "theta")
-end
-
-# ╔═╡ 92d87248-ba24-45da-9986-0741ffe17082
-visualization = VisualizationCallback(interval = 10000,
-                                      solution_variables = cons2perturb)
-
 # ╔═╡ f2d35fb1-cba0-419b-b3fc-3fee9a152532
 callbacks_amr = CallbackSet(amr_callback)
 
@@ -354,7 +334,9 @@ sol_amr = solve(ode_amr, SSPRK43(thread = OrdinaryDiffEq.True()),
             maxiters = 1.0e7,
             dt = 1.0,
             save_everystep = false, callback = callbacks_amr);
+	
 pd_amr = PlotData2D(sol_amr)
+
 theta_perturb_amr = let u = Trixi.wrap_array(sol_amr.u[end], semi_amr)
     rho = u[1, :, : ,:]
     rho_v1 = u[2, : ,: ,:]
@@ -404,7 +386,40 @@ mesh_orography = StructuredMesh((32, 32), (f1, f2, f3, f4), periodicity = (true,
 end
 
 # ╔═╡ 5b9eaae3-9278-485d-a119-40004f7bfaec
+function source_terms_damping(u, x, t, equations::CompressibleEulerEquations2D)
+    @unpack g, c_p, c_v, gamma, p_0, T_0, z_B, z_T, Nf, u0 = setup
 
+	rho, rho_v1, rho_v2, rho_e = u
+   
+    R = c_p - c_v
+    
+	v1 = rho_v1 / rho
+	v2 = rho_v2 / rho
+    p = (equations.gamma - 1) * (rho_e - 0.5 * (rho_v1 * v1 + rho_v2 * v2))
+	rho_theta =  (p / p_0)^(c_v / c_p) * p_0 / R
+    theta = rho_theta/rho
+
+    alfa = 0.1
+
+    if x[2] <= z_B
+        S_v = 0.0
+    elseif (x[2] - z_B)/(z_T - z_B) <= 1/2
+        S_v = -alfa/2 *(1 - cospi((x[2] - z_B)/(z_T - z_B)))
+    else 
+        S_v = -alfa/2 * ( 1 + ((x[2] - z_B)/(z_T - z_B) - 1/2))*pi
+    end
+
+    exner = exp(-Nf^2/g * x[2])
+
+    theta_0 = T_0/exner
+    K = p_0 * (R/p_0)^gamma
+	du2 = rho * (v1-u0) * S_v
+	du3 = rho_v2 * S_v 
+	du4 = rho * (theta-theta_0) * S_v * K * gamma/(gamma - 1.0) * (rho_theta)^(gamma - 1.0)  + du2 * v1 + du3 * v2
+
+	return SVector(zero(eltype(u)), du2, du3 -g * rho, du4 - g * rho_v2)
+
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -2818,8 +2833,10 @@ version = "1.4.1+2"
 # ╠═bbdb5d15-b207-4b62-a2d6-d496ec8af214
 # ╠═d2db4dde-821c-4a4c-80d3-a172b777782a
 # ╟─f4a2de9f-357c-424f-9619-500d3e524c3f
+# ╟─14670101-6792-4587-8efb-865627b4e446
 # ╟─54b02548-63e0-4b07-b982-56c51e6f450a
-# ╠═e6cdc448-565e-4e50-a726-75847ef13bc5
+# ╟─695bf5b1-2f99-4f92-8c35-2eb0279a5663
+# ╟─e6cdc448-565e-4e50-a726-75847ef13bc5
 # ╠═6a6fd640-396e-41fa-8c6b-977144181ad1
 # ╠═8fc7fe79-5b78-49a9-9bca-2179460324cc
 # ╠═5bb04fa4-36f4-4207-82f1-33a64797ceae
@@ -2829,13 +2846,11 @@ version = "1.4.1+2"
 # ╠═9051a970-0f5f-4019-b8ee-37b44753865b
 # ╠═28175473-1386-483f-9443-817cad9fd53e
 # ╠═498d3262-df89-408e-8ede-f32268894709
-# ╠═f3e2f824-dbdc-4748-88a3-ba8ba7e7ddb0
-# ╠═92d87248-ba24-45da-9986-0741ffe17082
 # ╠═f2d35fb1-cba0-419b-b3fc-3fee9a152532
-# ╟─7ebed9ca-8f57-4971-a274-bb816437642f
+# ╠═7ebed9ca-8f57-4971-a274-bb816437642f
 # ╠═22fdcd64-aabd-4b9d-81dc-670ecefc6528
 # ╠═ef5bba7b-2406-4e82-b509-8cace58bf508
-# ╟─d74493e3-747a-42ac-86ec-3f2b0d01eabb
+# ╠═d74493e3-747a-42ac-86ec-3f2b0d01eabb
 # ╠═5b9eaae3-9278-485d-a119-40004f7bfaec
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
