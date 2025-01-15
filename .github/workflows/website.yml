@@ -30,6 +30,7 @@ jobs:
         run: |
           mkdir -p public
           cp introduction_to_julia/Introduction_to_Julia.html public/Introduction_to_Julia.html
+          cp introduction_to_trixi/Introduction_to_Trixi.html public/Introduction_to_Trixi.html
       - name: Upload static files as artifact
         id: deployment
         uses: actions/upload-pages-artifact@v3
