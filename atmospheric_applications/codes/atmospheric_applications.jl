@@ -353,11 +353,14 @@ theta_perturb_amr = let u = Trixi.wrap_array(sol_amr.u[end], semi_amr)
 end
 
 plot(ScalarPlotData2D(theta_perturb_amr, semi_amr), title = "Potential Temperature perturbation [K], t = 1000 s")
-	plot!(getmesh(pd_amr))
+
+plot!(getmesh(pd_amr))
 end
 
-# ╔═╡ 22fdcd64-aabd-4b9d-81dc-670ecefc6528
-# SJOW VIDEO
+# ╔═╡ c886e8ca-8506-4848-a342-2613747cddb1
+begin
+	plot(ScalarPlotData2D(theta_perturb_amr, semi_amr), title = "Potential Temperature perturbation [K], t = 1000 s")
+end
 
 # ╔═╡ ef5bba7b-2406-4e82-b509-8cace58bf508
 md""" 
@@ -373,25 +376,29 @@ begin
 a = 10000.0
 L = 240000.0
 H = 30000.0
-peak = 2000.0
-y_b = peak / (1 + (L/2 / a)^2)
-alfa = (H - y_b) * 0.5
+peak = 5000.0
+y_b_v = peak / (1 + (L/2 / a)^2)
+alfa_v = (H - y_b_v) * 0.5
 
-f1(s) = SVector(-L/2, y_b + alfa * (s + 1))
-f2(s) = SVector(L/2, y_b + alfa * (s + 1))
-f3(s) = SVector((s + 1-1) * L/2, peak / (1 + ((s + 1-1) * L/2)^2 / a^2))
-f4(s) = SVector((s + 1-1) * L/2, H)
+f1v(s) = SVector(-L/2, y_b_v + alfa_v * (s + 1))
+f2v(s) = SVector(L/2, y_b_v + alfa_v * (s + 1))
+f3v(s) = SVector(s * L/2, peak / (1 + ( s * L/2)^2 / a^2))
+f4v(s) = SVector(s * L/2, H)
 
-mesh_orography = StructuredMesh((32, 32), (f1, f2, f3, f4), periodicity = (true, false)); nothing
+mesh_orography_v = StructuredMesh((32, 32), (f1v, f2v, f3v, f4v), periodicity = (true, false)); nothing
 end
 
 # ╔═╡ 5b9eaae3-9278-485d-a119-40004f7bfaec
 function source_terms_damping(u, x, t, equations::CompressibleEulerEquations2D)
-    @unpack g, c_p, c_v, gamma, p_0, T_0, z_B, z_T, Nf, u0 = setup
-
+	c_p = 1004.0; c_v = 717.0; p_0 = 100_000.0
+	gamma = equations.gamma
+	u0 = 20.0
+	z_B = 15000.0; z_T = 30000.0
+	T_0 = 250.0
+	g = 9.81
+	R = c_p - c_v
+	Nf = g/sqrt(c_p*T_0)
 	rho, rho_v1, rho_v2, rho_e = u
-   
-    R = c_p - c_v
     
 	v1 = rho_v1 / rho
 	v2 = rho_v2 / rho
@@ -420,6 +427,97 @@ function source_terms_damping(u, x, t, equations::CompressibleEulerEquations2D)
 	return SVector(zero(eltype(u)), du2, du3 -g * rho, du4 - g * rho_v2)
 
 end
+
+# ╔═╡ ebecb24d-502e-4358-828f-7b3d03129d5f
+function initial_condition_linear_hydrostatic(x, t, equations::CompressibleEulerEquations2D)
+	g = 9.81
+	c_p = 1004.0
+	c_v = 717.0
+	p_0 = 100_000.0
+	T_0 = 250.0
+	u0 = 20.0
+	Nf = g/sqrt(c_p*T_0)
+
+    # Exner pressure, solves hydrostatic equation for x[2]
+    exner = exp(-Nf^2/g*x[2])
+    # pressure
+    p_0 = 100_000.0  # reference pressure
+    R = c_p - c_v    # gas constant (dry air)
+    p = p_0 * exner^(c_p / R)
+
+    # density
+    rho = p / (R * T_0)
+    v1 = u0
+    v2 = 0.0
+    
+    return prim2cons(SVector(rho, v1, v2 ,p), equations)
+end
+
+# ╔═╡ e507bb22-287a-46ac-9932-745a103578d2
+begin
+semi_hydrostatic_v = SemidiscretizationHyperbolic(mesh_orography_v, 
+												equations, initial_condition_linear_hydrostatic,solver, 
+												source_terms = source_terms_damping,
+                                                boundary_conditions = 			      												boundary_conditions)
+tspan_hydrostatic_v = (0.0, 0.0)
+ode_hydrostatic_v = semidiscretize(semi_hydrostatic_v, tspan_hydrostatic_v)
+sol_hydrostatic_v = solve(ode_hydrostatic_v, SSPRK43(thread = OrdinaryDiffEq.True()),
+            maxiters = 1.0e7,
+            dt = 1.0,
+            save_everystep = false);	
+pd_hydrostatic_v = PlotData2D(sol_hydrostatic_v)
+plot(getmesh(pd_hydrostatic_v), aspect_ratio = 10)
+end
+
+# ╔═╡ 2b86d029-f10d-46c4-a1e9-28fbb234663d
+begin
+y_b = 1 / (1 + (L/2 / a)^2)
+alfa = (H - y_b) * 0.5
+
+f1(s) = SVector(-L/2, y_b + alfa * (s + 1))
+f2(s) = SVector(L/2, y_b + alfa * (s + 1))
+f3(s) = SVector( s * L/2, 1.0 / (1 + ((s * L/2)^2 / a^2)))
+f4(s) = SVector( s * L/2, H)
+
+mesh_orography = StructuredMesh((32, 32), (f1, f2, f3, f4), periodicity = (true, false)); nothing
+end
+
+# ╔═╡ 85431810-87ee-4dec-bbfa-dfff8c5eda04
+begin
+semi_hydrostatic = SemidiscretizationHyperbolic(mesh_orography, 
+												equations, initial_condition_linear_hydrostatic,solver, 
+												source_terms = source_terms_damping,
+                                                boundary_conditions = 			      												boundary_conditions)
+tspan_hydrostatic = (0.0, 5*3600.0)
+ode_hydrostatic = semidiscretize(semi_hydrostatic, tspan_hydrostatic)
+sol_hydrostatic = solve(ode_hydrostatic, SSPRK43(thread = OrdinaryDiffEq.True()),
+            maxiters = 1.0e7,
+            dt = 1.0,
+            save_everystep = false);	
+pd_hydrostatic = PlotData2D(sol_hydrostatic)
+end
+
+# ╔═╡ 9455e131-3968-4d57-a9f9-3b68bd9dcac8
+begin
+	horizontal_velocity = let u = Trixi.wrap_array(sol_hydrostatic.u[end], semi_hydrostatic)
+	    rho = u[1, :, : ,:]
+	    rho_v1 = u[2, : ,: ,:]
+	    rho_v1 ./ rho .- 20.0
+	end
+	# Convertire i limiti in km
+xtick_positions = [-40000, -20000, 20000, 40000]  # Posizioni dei tick in metri
+ytick_positions = [0, 2000, 4000, 6000, 8000, 10000, 12000]          # Posizioni dei tick in metri
+
+xtick_labels = ["-40 km", "-20 km", "20 km", "40 km"]  # Etichette da visualizzare
+ytick_labels = ["0 km", "2 km", "4 km", "6 km", "8 km", "10 km", "12 km"]       
+	# Plotting the vertical velocity component
+	plot(ScalarPlotData2D(horizontal_velocity, semi_hydrostatic), title = "Horizontal velocity component [m/s]", aspect_ratio = 5, xlim = (-40000, 40000), ylim = (0, 12000), 
+     xticks = (xtick_positions, xtick_labels),  # Specifica i tick x
+     yticks = (ytick_positions, ytick_labels))
+end
+
+# ╔═╡ 2617f478-5556-4ab1-a506-a0a7bc0238cc
+plot(sol)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -2837,7 +2935,7 @@ version = "1.4.1+2"
 # ╟─54b02548-63e0-4b07-b982-56c51e6f450a
 # ╟─695bf5b1-2f99-4f92-8c35-2eb0279a5663
 # ╟─e6cdc448-565e-4e50-a726-75847ef13bc5
-# ╠═6a6fd640-396e-41fa-8c6b-977144181ad1
+# ╟─6a6fd640-396e-41fa-8c6b-977144181ad1
 # ╠═8fc7fe79-5b78-49a9-9bca-2179460324cc
 # ╠═5bb04fa4-36f4-4207-82f1-33a64797ceae
 # ╠═956d6c3d-0138-4791-95a9-9f8525570a32
@@ -2848,9 +2946,15 @@ version = "1.4.1+2"
 # ╠═498d3262-df89-408e-8ede-f32268894709
 # ╠═f2d35fb1-cba0-419b-b3fc-3fee9a152532
 # ╠═7ebed9ca-8f57-4971-a274-bb816437642f
-# ╠═22fdcd64-aabd-4b9d-81dc-670ecefc6528
+# ╟─c886e8ca-8506-4848-a342-2613747cddb1
 # ╠═ef5bba7b-2406-4e82-b509-8cace58bf508
 # ╠═d74493e3-747a-42ac-86ec-3f2b0d01eabb
 # ╠═5b9eaae3-9278-485d-a119-40004f7bfaec
+# ╠═ebecb24d-502e-4358-828f-7b3d03129d5f
+# ╟─e507bb22-287a-46ac-9932-745a103578d2
+# ╠═2b86d029-f10d-46c4-a1e9-28fbb234663d
+# ╠═85431810-87ee-4dec-bbfa-dfff8c5eda04
+# ╠═9455e131-3968-4d57-a9f9-3b68bd9dcac8
+# ╠═2617f478-5556-4ab1-a506-a0a7bc0238cc
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

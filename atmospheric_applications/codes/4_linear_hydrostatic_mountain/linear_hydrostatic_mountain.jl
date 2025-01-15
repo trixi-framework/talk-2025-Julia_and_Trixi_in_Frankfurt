@@ -99,7 +99,7 @@ solver = DGSEM(basis, surface_flux, volume_integral)
 a = 10000.0
 L = 240000.0
 H = 30000.0
-peak = 1.0
+peak = 5000.0
 y_b = peak / (1 + (L/2 / a)^2)
 alfa = (H - y_b) * 0.5
 
@@ -118,7 +118,7 @@ semi = SemidiscretizationHyperbolic(mesh, equations, linear_hydrostatic_setup, s
 # ODE solvers, callbacks etc.
 
 tspan = (0.0, 5*3600.0)  # 1000 seconds final time
-
+tspan = (0.0, 3600.0)
 ode = semidiscretize(semi, tspan)
 
 summary_callback = SummaryCallback()
