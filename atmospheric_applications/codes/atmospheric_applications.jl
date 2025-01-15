@@ -175,10 +175,13 @@ sol = solve(ode, SSPRK43(thread = OrdinaryDiffEq.True()),
             save_everystep = false);
 
 # ╔═╡ f4a2de9f-357c-424f-9619-500d3e524c3f
+# ╠═╡ disabled = true
+#=╠═╡
 begin
 pd = PlotData2D(sol)
 plot(getmesh(pd))
 end
+  ╠═╡ =#
 
 # ╔═╡ 14670101-6792-4587-8efb-865627b4e446
 md"### Initial condition rising bubble"
@@ -284,9 +287,8 @@ end
 
 # ╔═╡ 9051a970-0f5f-4019-b8ee-37b44753865b
 begin
-	boundary_conditions_amr = Dict(
-	:y_neg => boundary_condition_slip_wall,
-	:y_pos => boundary_condition_slip_wall)
+boundary_conditions_amr = Dict( :y_neg => boundary_condition_slip_wall,
+							    :y_pos => boundary_condition_slip_wall )
 
 semi_amr = SemidiscretizationHyperbolic(mesh_amr, 
 									equations, 
@@ -517,7 +519,164 @@ ytick_labels = ["0 km", "2 km", "4 km", "6 km", "8 km", "10 km", "12 km"]
 end
 
 # ╔═╡ 2617f478-5556-4ab1-a506-a0a7bc0238cc
-plot(sol)
+md""" 
+## Mountain Schär
+
+The mesh is a rectangular domain of size $[0, 20 \text{ km}] \text{ x } [0, 10 \text{ km}]$.
+
+The domain is divided into 64 cells along the horizontal direction $x$ and 32 in the vertical direction $z$.
+"""
+
+# ╔═╡ e44793c5-aa7c-4b64-bdc7-52a6bd60980c
+begin
+function mountain_schar_profile()
+a = 5000.0
+L = 50000.0
+H = 30000.0
+lambda_c = 4000.0
+hc = 250.0
+y_b = hc *exp(-(L/2/a)^2)*cospi(L/2/lambda_c)^2
+alfa = (H - y_b) * 0.5
+
+f1(s) = SVector(-L/2, y_b + alfa * (s + 1))
+f2(s) = SVector(L/2, y_b + alfa * (s + 1))
+f3(s) = SVector(s * L/2, hc * exp(-(s * L/2 /a)^2) * cospi(s * L/2 /lambda_c)^2)
+f4(s) = SVector(s * L/2, H)
+
+mesh = StructuredMesh((80, 32), (f1, f2, f3, f4), periodicity = (true, false))
+	return mesh
+end
+	mesh_schar = mountain_schar_profile()
+end
+
+# ╔═╡ a45a1305-faa2-4c6e-a79b-9c771e7ff7ec
+function source_terms_rayleigh(u, x, t, equations::CompressibleEulerEquations2D)
+	g = 9.81
+	c_p = 1004.0
+	c_v = 717.0
+	gamma = c_p/c_v
+	p_0 = 100_000.0
+	theta_0 = 280.0
+	z_B = 20000.0
+	z_T = 30000.0
+	Nf = 0.01
+	u0 = 10.0
+	rho, rho_v1, rho_v2, rho_e = u
+   
+    R = c_p - c_v
+    
+	v1 = rho_v1 / rho
+	v2 = rho_v2 / rho
+    p = (equations.gamma - 1) * (rho_e - 0.5 * (rho_v1 * v1 + rho_v2 * v2))
+	rho_theta =  (p / p_0)^(c_v / c_p) * p_0 / R
+    theta = rho_theta/rho
+
+    alfa = 0.1
+
+    x_B = 20000.0
+    x_T = 25000.0
+
+    if x[2] <= z_B
+        S_v = 0.0
+    else
+        S_v = -alfa * sinpi(0.5*(x[2] - z_B)/(z_T - z_B))^2
+    end
+    if x[1] < x_B
+        S_h1 = 0.0
+    else
+        S_h1 = -alfa * sinpi(0.5*(x[1] - x_B)/(x_T - x_B))^2
+    end
+
+    if x[1] > -x_B
+        S_h2 = 0.0
+    else
+        S_h2 = -alfa * sinpi(0.5*(x[1] + x_B)/(-x_T + x_B))^2
+    end
+
+    K = p_0 * (R/p_0)^gamma
+	du2 = rho * (v1-u0) * (S_v + S_h1 + S_h2)
+	du3 = rho_v2 * (S_v + S_h1 + S_h2) 
+	du4 = rho * (theta-theta_0) * (S_v + S_h1 + S_h2) * K * gamma/(gamma - 1.0) * (rho_theta)^(gamma - 1.0)  + du2 * v1 + du3 * v2
+
+	return SVector(zero(eltype(u)), du2, du3 - g * rho, du4*0.0 - g * rho_v2)
+
+end
+
+# ╔═╡ 19818181-c2f4-4824-8eed-f938a3b204cf
+function initial_condition_schar(x, t, equations::CompressibleEulerEquations2D)
+	g = 9.81; c_p = 1004.0; c_v = 717.0; p_0 = 100_000.0; theta_0 = 280.0; u0 = 10.0
+	Nf = 0.01
+    # Exner pressure, solves hydrostatic equation for x[2]
+    exner = 1 + g^2 / (c_p * theta_0 * Nf^2) * (exp(-Nf^2 / g * x[2]) - 1)
+    # pressure
+    p_0 = 100_000.0  # reference pressure
+    R = c_p - c_v    # gas constant (dry air)
+    p = p_0 * exner^(c_p / R)
+    potential_temperature = theta_0 * exp(Nf^2/g*x[2])
+    T = potential_temperature * exner
+    # density
+    rho = p / (R * T)
+    v1 = u0
+    v2 = 0.0
+    
+    return prim2cons(SVector(rho, v1, v2 ,p), equations)
+end
+
+# ╔═╡ e7958ec8-b910-4e03-90bf-f5e50d5af4e7
+begin
+	semi_schar = SemidiscretizationHyperbolic(mesh_schar, equations, initial_condition_schar, solver, source_terms = source_terms_rayleigh,
+                                    boundary_conditions = boundary_conditions)
+	
+	tspan_schar = (0.0, 1*3600.0)
+ode_schar = semidiscretize(semi_schar, tspan_schar)
+sol_schar = solve(ode_schar, SSPRK43(thread = OrdinaryDiffEq.True()),
+            maxiters = 1.0e7,
+            dt = 1.0,
+            save_everystep = false);	
+end
+
+# ╔═╡ f91c4f28-38b1-4267-8c97-d494f4535cb9
+begin
+	u1 = let u = Trixi.wrap_array(sol_schar.u[end], semi_schar)
+	    rho = u[1, :, : ,:]
+	    rho_v1 = u[2, : ,: ,:]
+	    rho_v1 ./ rho .- 20.0
+	end
+	function plot_schar(u1, semi_schar)
+	# Convertire i limiti in km
+	xtick_positions = [-10000, -5000, 5000, 10000]  # Posizioni dei tick in metri
+	ytick_positions = [0, 2000, 4000, 6000, 8000, 10000]          # Posizioni dei tick in metri
+
+	xtick_labels = ["-10 km", "-5 km", "5 km", "10 km"]  # Etichette da visualizzare
+	ytick_labels = ["0 km", "2 km", "4 km", "6 km", "8 km", "10 km"]       
+	# Plotting the vertical velocity component
+	plot(ScalarPlotData2D(u1, semi_schar), title = "Horizontal velocity component [m/s]", aspect_ratio = 2, xlim = (-10000, 10000),  ylim = (0, 10000), 
+     xticks = (xtick_positions, xtick_labels),  # Specifica i tick x
+     yticks = (ytick_positions, ytick_labels))
+	end
+	plot_schar(u1, semi_schar)
+end
+
+# ╔═╡ cf90b832-eaec-41d1-b42f-eadcf6ab87bb
+pd_schar = PlotData2D(sol_schar)
+
+# ╔═╡ 5533f9d4-8ce1-489b-adad-6016bc003e2e
+begin
+	function plot_mesh_schar(pd_schar)
+		# Convertire i limiti in km
+		xtick_positions = [-10000, -5000, 5000, 10000]  # Posizioni dei tick in metri
+		ytick_positions = [0, 2000, 4000, 6000, 8000, 10000]          # Posizioni dei tick in metri
+	
+		xtick_labels = ["-10 km", "-5 km", "5 km", "10 km"]  # Etichette da visualizzare
+		ytick_labels = ["0 km", "2 km", "4 km", "6 km", "8 km", "10 km"]       
+		# Plotting the vertical velocity component
+		plot(getmesh(pd_schar), aspect_ratio = 2, xlim = (-10000, 10000),  ylim = (0, 10000), 
+	     xticks = (xtick_positions, xtick_labels),  # Specifica i tick x
+	     yticks = (ytick_positions, ytick_labels))
+	end
+	
+	plot_mesh_schar(pd_schar)
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -2938,7 +3097,7 @@ version = "1.4.1+2"
 # ╟─6a6fd640-396e-41fa-8c6b-977144181ad1
 # ╠═8fc7fe79-5b78-49a9-9bca-2179460324cc
 # ╠═5bb04fa4-36f4-4207-82f1-33a64797ceae
-# ╠═956d6c3d-0138-4791-95a9-9f8525570a32
+# ╟─956d6c3d-0138-4791-95a9-9f8525570a32
 # ╟─0fc2fdc1-4d45-428f-9a47-590409646921
 # ╠═98a46c89-8805-4461-8528-3bd5f4433e31
 # ╠═9051a970-0f5f-4019-b8ee-37b44753865b
@@ -2956,5 +3115,12 @@ version = "1.4.1+2"
 # ╠═85431810-87ee-4dec-bbfa-dfff8c5eda04
 # ╠═9455e131-3968-4d57-a9f9-3b68bd9dcac8
 # ╠═2617f478-5556-4ab1-a506-a0a7bc0238cc
+# ╠═e44793c5-aa7c-4b64-bdc7-52a6bd60980c
+# ╠═a45a1305-faa2-4c6e-a79b-9c771e7ff7ec
+# ╠═19818181-c2f4-4824-8eed-f938a3b204cf
+# ╠═e7958ec8-b910-4e03-90bf-f5e50d5af4e7
+# ╠═f91c4f28-38b1-4267-8c97-d494f4535cb9
+# ╠═cf90b832-eaec-41d1-b42f-eadcf6ab87bb
+# ╟─5533f9d4-8ce1-489b-adad-6016bc003e2e
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

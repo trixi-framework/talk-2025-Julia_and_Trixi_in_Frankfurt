@@ -118,7 +118,7 @@ f2(s) = SVector(L/2, y_b + alfa * (s + 1))
 f3(s) = SVector(s * L/2, hc * exp(-(s * L/2 /a)^2) * cospi(s * L/2 /lambda_c)^2)
 f4(s) = SVector(s * L/2, H)
 
-cells_per_dimension = (32, 32)
+cells_per_dimension = (80, 32)
 mesh = StructuredMesh(cells_per_dimension, (f1, f2, f3, f4), periodicity = (true, false))
 
 semi = SemidiscretizationHyperbolic(mesh, equations, schär_setup, solver, source_terms = schär_setup,
@@ -127,7 +127,7 @@ semi = SemidiscretizationHyperbolic(mesh, equations, schär_setup, solver, sourc
 ###############################################################################
 # ODE solvers, callbacks etc.
 
-tspan = (0.0, 5*3600.0) #5 hours.
+tspan = (0.0, 1*3600.0) #5 hours.
 
 ode = semidiscretize(semi, tspan)
 
@@ -152,7 +152,7 @@ callbacks = CallbackSet(summary_callback,
                         analysis_callback,
                         alive_callback,
                         save_solution,
-                        stepsize_callback, visualization)
+                        stepsize_callback)
 
 ###############################################################################
 # run the simulation
