@@ -96,7 +96,6 @@ warm_bubble_setup = WarmBubbleSetup()
 
 equations = CompressibleEulerEquations2D(warm_bubble_setup.gamma)
 
-
 boundary_conditions = Dict(
 	:y_neg => boundary_condition_slip_wall,
 	:y_pos => boundary_condition_slip_wall)
@@ -120,11 +119,11 @@ mesh = P4estMesh(trees_per_dimension,
 	polydeg = 3, initial_refinement_level = 2,
 	coordinates_min = coordinates_min, coordinates_max = coordinates_max,
 	periodicity = (true, false))
-
+@show mesh
 semi = SemidiscretizationHyperbolic(mesh, equations, warm_bubble_setup, solver,
 	source_terms = warm_bubble_setup,
 	boundary_conditions = boundary_conditions)
-
+@show mesh
 ###############################################################################
 # ODE solvers, callbacks etc.
 
@@ -139,7 +138,7 @@ amr_indicator = IndicatorMax(semi, variable = cons2theta)
 amr_controller = ControllerThreeLevel(semi, amr_indicator,
 	base_level = 1,
 	med_level = 3, med_threshold = 0.05,
-	max_level = 5, max_threshold = 0.1)
+	max_level = 4, max_threshold = 0.1)
 amr_callback = AMRCallback(semi, amr_controller,
 	interval = 5,
 	adapt_initial_condition = true,
@@ -154,7 +153,7 @@ amr_callback = AMRCallback(semi, amr_controller,
 
 
 
-callbacks = CallbackSet(summary_callback, alive_callback, save_solution, amr_callback)
+callbacks = CallbackSet(summary_callback, alive_callback, amr_callback)
 
 ###############################################################################
 # run the simulation

@@ -6,11 +6,11 @@ using Plots
 
 struct WarmBubbleSetup
     # Physical constants
-    g::Float64       # gravity of earth
-    c_p::Float64     # heat capacity for constant pressure (dry air)
-    c_v::Float64     # heat capacity for constant volume (dry air)
-    gamma::Float64   # heat capacity ratio (dry air)
-    p_0::Float64     # atmospheric pressure
+    g::Float64        # gravity of earth
+    c_p::Float64      # heat capacity for constant pressure (dry air)
+    c_v::Float64      # heat capacity for constant volume (dry air)
+    gamma::Float64    # heat capacity ratio (dry air)
+    p_0::Float64      # atmospheric pressure
     theta_0::Float64  # constant background potential temperature steady state     
     function WarmBubbleSetup(; g = 9.81, c_p = 1004.0, c_v = 717.0, gamma = c_p / c_v, p_0 = 100_000.0, theta_0 = 300.0)
         new(g, c_p, c_v, gamma, p_0, theta_0)
@@ -88,7 +88,7 @@ solver = DGSEM(basis, surface_flux, volume_integral)
 coordinates_min = (0.0, 0.0)
 coordinates_max = (20_000.0, 10_000.0)
 
-cells_per_dimension = (64, 32)
+cells_per_dimension = (32, 32)
 mesh = StructuredMesh(cells_per_dimension, coordinates_min, coordinates_max,
                       periodicity = (true, false))
 

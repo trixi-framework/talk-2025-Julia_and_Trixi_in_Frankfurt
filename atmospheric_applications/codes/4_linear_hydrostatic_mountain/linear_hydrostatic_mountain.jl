@@ -117,7 +117,7 @@ semi = SemidiscretizationHyperbolic(mesh, equations, linear_hydrostatic_setup, s
 ###############################################################################
 # ODE solvers, callbacks etc.
 
-tspan = (0.0, 2*3600.0)  # 1000 seconds final time
+tspan = (0.0, 5*3600.0)  # 1000 seconds final time
 
 ode = semidiscretize(semi, tspan)
 
