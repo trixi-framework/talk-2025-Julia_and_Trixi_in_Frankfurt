@@ -16,13 +16,12 @@ end
 md""" 
 # Atmospheric Applications in Trixi.jl
 
-Some of famous benchmark test cases will be illustrated, showing different possibilities and capabalities of Trixi.jl
+Some famous benchmark test cases will be illustrated, showing different possibilities and capabalities of Trixi.jl.
 
-- Setting up your own problem
-- 
-- Different type of Mesh
-- How to create Horography
-- and more ...
+- Setting up your own problem: Rising Bubble
+- Warped/Curvilinear Mesh
+- Adaptive Mesh Refinement (AMR)
+- Mountain Waves: Orography and HOHQ Mesh
 """
 
 # ╔═╡ 065746f1-1deb-49c4-854d-457a8f7919c2
@@ -34,7 +33,7 @@ Simulations in Trixi.jl consists of different building blocks
 - Source terms
 - Initial conditions
 - Boundary Conditions
-- Domain size and Mesh (P4est, T8code, StructuredMesh ...)
+- Domain and Mesh (P4est, T8code, StructuredMesh ...)
 - Semidiscretization (DGSEM, FDSBP, ...)
 - Time Integrator
 
@@ -44,14 +43,49 @@ Simulations in Trixi.jl consists of different building blocks
 md""" 
 # Rising Bubble test case
 
-First we define the equations and the gravity source terms for the momentum and the energy equation.
+In Trixi.jl you can choose among a broad set of equations. For dry air atmospheric applications we choose 2D Compressible Euler Equations.
 """
 
 # ╔═╡ 482f659c-ffbe-44db-bf95-a7bdd86c0640
 gamma = 1004.0/717.0
 
 # ╔═╡ e1947159-3084-472c-b9a5-fbdf648042ef
-equations  = equations = CompressibleEulerEquations2D(gamma)
+equations  = CompressibleEulerEquations2D(gamma)
+
+# ╔═╡ 5c644ba6-f209-4336-92aa-170164bbe99c
+md""" 
+#### Gravity source term
+Pointwise source terms can be easily added to the right-hand side of the equations with user-defined functions or choosing among the built-in source terms functions in Trixi.jl
+"""
+
+# ╔═╡ 287e2d6c-3b9c-4ba9-9d01-42f014047d81
+md"
+```math
+\begin{equation}
+    \partial_t \begin{pmatrix}
+           \varrho \\
+           \varrho u \\
+          \varrho v \\
+           \varrho E
+         \end{pmatrix} + \partial_x \begin{pmatrix}
+           \varrho u \\
+           \varrho u^2 + p \\
+           \varrho u v \\
+            (\varrho E + p) u
+         \end{pmatrix}+ \partial_y \begin{pmatrix}
+           \varrho u \\
+           \varrho u v \\
+           \varrho v^2 + p\\
+            (\varrho E + p) v
+         \end{pmatrix} =  \begin{pmatrix}
+           0 \\
+           0 \\
+           - \varrho g \\
+           -\varrho g v 
+         \end{pmatrix}
+\end{equation}
+```
+"
 
 # ╔═╡ 012b2045-4172-41f6-98bb-c773b92cf1c3
 function source_terms_gravity(u, x, t, equations::CompressibleEulerEquations2D)
@@ -59,6 +93,21 @@ function source_terms_gravity(u, x, t, equations::CompressibleEulerEquations2D)
 	rho, _, rho_v2, _ = u
     return SVector(0, 0, -g * rho, -g * rho_v2)
 end
+
+# ╔═╡ f94051e4-a809-4732-9afe-550c3fb43e44
+md""" 
+#### Initial condition: warm rising bubble
+In an hydrostatic balance steady state condition with constant potential temperature $\theta = 300$, the motion is driven by the following perturbation.
+"""
+
+# ╔═╡ 3fa067c0-7491-4a55-8b9b-16376a48a90b
+L"""
+\theta' =
+\begin{cases}
+0, & \text{se } r > r_c, \\
+\frac{\theta_c}{2} \left[ 1 + \cos\left(\frac{\pi r}{r_c}\right) \right], & \text{se } r \leq r_c.
+\end{cases}
+"""
 
 # ╔═╡ 61de0650-e3cb-4dfe-823b-65ca76b843dd
 function initial_condition_rising_bubble(x, t, equations::CompressibleEulerEquations2D)
@@ -81,7 +130,7 @@ function initial_condition_rising_bubble(x, t, equations::CompressibleEulerEquat
     if r <= radius
         potential_temperature_perturbation = 2 * cospi(0.5 * r / radius)^2
     end
-    potential_temperature = potential_temperature_ref + potential_temperature_perturbation
+    potential_temperature = potential_temperature_ref + 	   potential_temperature_perturbation
 
     # Exner pressure, solves hydrostatic equation for x[2]
     exner = 1 - g / (c_p * potential_temperature) * x[2]
@@ -102,19 +151,25 @@ function initial_condition_rising_bubble(x, t, equations::CompressibleEulerEquat
     return prim2cons(SVector(rho, v1, v2, p), equations)
 end
 
+# ╔═╡ ea43bccf-c1c0-4661-8438-6bd2466d411b
+md""" 
+#### Boundary conditions
+Along the $x$-direction periodic boundary conditions are employed and for the top and bottom walls the boundary conditions are no-flux.
+"""
+
 # ╔═╡ 34f5fbd0-abe8-468d-9a62-30d5e5924b97
 boundary_conditions = (x_neg = boundary_condition_periodic,
                        x_pos = boundary_condition_periodic,
                        y_neg = boundary_condition_slip_wall,
-                       y_pos = boundary_condition_slip_wall)
+                       y_pos = boundary_condition_slip_wall); nothing
 
 # ╔═╡ f583fefc-d0a6-4586-8c48-616942d29e98
 md""" 
-## Defining a simple Mesh
+#### Defining a simple Mesh
 
 The mesh is a rectangular domain of size $[0, 20 \text{ km}] \text{ x } [0, 10 \text{ km}]$.
 
-The domain is divided into 64 cells along the horizontal direction $x$ and 32 in the vertical direction $z$.
+The domain is divided into 64 cells along the $x$ horizontal direction and 32 in the $z$ vertical direction.
 """
 
 # ╔═╡ 022ee8fb-c758-4f87-8b60-8103cd8719f5
@@ -131,6 +186,16 @@ mesh = StructuredMesh(cells_per_dimension,
 					  coordinates_min, 
 					  coordinates_max,
                       periodicity = (true, false)); nothing
+
+# ╔═╡ d53556c2-a1d3-48c4-a265-2d0a61b5ec9a
+md""" 
+#### DGSEM Discretization
+
+DGSEM Flux differencing semi-discretization has been choosen for these test cases. 
+- Third order polynomial degree
+- LMARS flux for the surface integral
+- Kennedy-Gruber flux for the volume integral (symmetric!)
+"""
 
 # ╔═╡ ff35fbf5-53fd-4e9f-9090-5aab89812b31
 begin
@@ -151,15 +216,29 @@ semi = SemidiscretizationHyperbolic(mesh,
 									initial_condition_rising_bubble, 
 									solver,
                                     source_terms = source_terms_gravity,
-                                    boundary_conditions = boundary_conditions)
+                                    boundary_conditions = boundary_conditions); nothing
+
+# ╔═╡ fdd7e368-c826-49ac-aa9a-5002d0a0cae7
+begin
+function plot_mesh(semi)	
+
+tspan = (0.0, 0.0)
+ode = semidiscretize(semi, tspan)
+sol = solve(ode, SSPRK43(thread = OrdinaryDiffEq.True()),
+            maxiters = 1.0e7,
+            dt = 1.0,
+            save_everystep = false);	
+pd = PlotData2D(sol)
+plot(getmesh(pd))
+end
+	plot_mesh(semi)
+end
 
 # ╔═╡ 22a5f545-e62e-4594-92ba-7d7c90d172d4
 md""" 
-## Creating ODE function and defining the time integrator.
+#### Creating ODE function and defining the time integrator.
 
-The mesh is a rectangular domain of size $[0, 20 \text{ km}] \text{ x } [0, 10 \text{ km}]$.
-
-The domain is divided into 64 cells along the horizontal direction $x$ and 32 in the vertical direction $z$.
+Once the ODE has been built, we are ready to pass our RHS function to the ODE solver. The simulation is running with SSPRK43 with multiple-threads for $T = 1000$ s physical time.
 """
 
 # ╔═╡ f5691db4-fbba-4356-8898-63a33fe56f10
@@ -169,7 +248,8 @@ tspan = (0.0, 1000.0)  # 1000 seconds final time
 ode = semidiscretize(semi, tspan); nothing
 
 # ╔═╡ d2db4dde-821c-4a4c-80d3-a172b777782a
-sol = solve(ode, SSPRK43(thread = OrdinaryDiffEq.True()),
+sol = solve(ode, 
+		    SSPRK43(thread = OrdinaryDiffEq.True()),
             maxiters = 1.0e7,
             dt = 1.0,
             save_everystep = false);
@@ -229,13 +309,68 @@ end
 plot(ScalarPlotData2D(theta_perturb, semi), title = "Potential Temperature perturbation [K], t = 1000 s")
 end
 
+# ╔═╡ bb0b8663-98a9-44ab-ac7c-4c10ba56378e
+md"### Elixir Summary"
+
+# ╔═╡ 83825531-2488-4133-89c8-a88743cf10b1
+begin 
+	function simple_elixir()
+      # Equations
+	  equations  = CompressibleEulerEquations2D(gamma)
+
+	  # Boundary conditions	 
+	  boundary_conditions = (x_neg = boundary_condition_periodic,
+                             x_pos = boundary_condition_periodic,
+                             y_neg = boundary_condition_slip_wall,
+                             y_pos = boundary_condition_slip_wall)
+
+      # Initial condition	
+	  initial_condition = initial_condition_rising_bubble	
+
+      # Source terms	
+	  source_terms = source_terms_gravity
+	
+	  # Mesh
+	  coordinates_min = (0.0, 0.0)
+      coordinates_max = (20_000.0, 10_000.0)
+
+	  cells_per_dimension = (32, 32)
+      mesh = StructuredMesh(cells_per_dimension, coordinates_min, coordinates_max,
+                      periodicity = (true, false))	
+	
+	  # DGSEM semidiscretization
+	  polydeg = 3
+	
+	  surface_flux = FluxLMARS(340.0)
+	
+	  volume_flux = flux_kennedy_gruber
+	
+	  volume_integral = VolumeIntegralFluxDifferencing(volume_flux)
+	
+	  solver = DGSEM(polydeg, surface_flux, volume_integral)
+	  
+	  semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver,
+                                    source_terms = source_terms,
+                                    boundary_conditions = boundary_conditions)
+	  # ODE Solver
+	  tspan = (0.0, 1000.0)
+	
+      ode = semidiscretize(semi, tspan)
+
+	  sol = solve(ode, 
+		    SSPRK43(thread = OrdinaryDiffEq.True()),
+            maxiters = 1.0e7,
+            dt = 1.0,
+            save_everystep = false)
+	  end
+end
+
 # ╔═╡ 6a6fd640-396e-41fa-8c6b-977144181ad1
 md""" 
 ## Warped-Curvilinear Mesh.
 
-The mesh is a rectangular domain of size $[0, 20 \text{ km}] \text{ x } [0, 10 \text{ km}]$.
+We consider the same mesh and apply a warping transformation.
 
-The domain is divided into 64 cells along the horizontal direction $x$ and 32 in the vertical direction $z$.
 """
 
 # ╔═╡ 8fc7fe79-5b78-49a9-9bca-2179460324cc
@@ -247,7 +382,7 @@ end
 
 # ╔═╡ 5bb04fa4-36f4-4207-82f1-33a64797ceae
 mesh_warped = StructuredMesh(cells_per_dimension, mapping,
-                      periodicity = (true, false)); nothing
+                             periodicity = (true, false)); nothing
 
 # ╔═╡ 956d6c3d-0138-4791-95a9-9f8525570a32
 begin
@@ -271,19 +406,31 @@ end
 md""" 
 ## Adaptive-Mesh Refinement
 
-The mesh is a rectangular domain of size $[0, 20 \text{ km}] \text{ x } [0, 10 \text{ km}]$.
+Simulations in Trixi.jl can be speed up maintaining an overall good accuracy through Adaptive Mesh Refinement. The hierarchical Cartesian mesh is locally refined, based on a choosen reference variable.
 
-The domain is divided into 64 cells along the horizontal direction $x$ and 32 in the vertical direction $z$.
+In Trixi.jl some callback functions can be defined, for numerical analysis and step size control. The AMR function is also defined passing an AMR Callback to the ODE solver, as shown in this example.
+
+For AMR we switch from StructuredMesh to P4estMesh.
 """
 
 # ╔═╡ 98a46c89-8805-4461-8528-3bd5f4433e31
 begin
 	trees_per_dimension = (4, 4)
 	mesh_amr = P4estMesh(trees_per_dimension,
-		polydeg = 3, initial_refinement_level = 2,
-		coordinates_min = coordinates_min, coordinates_max = coordinates_max,
-		periodicity = (true, false))
+						 polydeg = 3, initial_refinement_level = 2,
+		                 coordinates_min = coordinates_min, 
+		                 coordinates_max = coordinates_max,
+		                 periodicity = (true, false)); nothing
 end
+
+# ╔═╡ d9f92197-b9dc-4820-aca0-ad3dd2e30080
+md"""
+
+The semi-discretization follows the same step as before.
+
+
+
+"""
 
 # ╔═╡ 9051a970-0f5f-4019-b8ee-37b44753865b
 begin
@@ -291,11 +438,11 @@ boundary_conditions_amr = Dict( :y_neg => boundary_condition_slip_wall,
 							    :y_pos => boundary_condition_slip_wall )
 
 semi_amr = SemidiscretizationHyperbolic(mesh_amr, 
-									equations, 
-									initial_condition_rising_bubble, 
-									solver,
-                                    source_terms = source_terms_gravity,
-                                    boundary_conditions = boundary_conditions_amr)
+										equations, 
+									 	initial_condition_rising_bubble, 
+										solver,
+                                    	source_terms = source_terms_gravity,
+                                    	boundary_conditions = 			           boundary_conditions_amr)
 ode_amr = semidiscretize(semi_amr, (0.0, 1000.0)); nothing	
 end
 
@@ -312,31 +459,37 @@ function cons2theta(u, equations::CompressibleEulerEquations2D)
 	rho_theta = (p / p_0)^(c_v / c_p) * p_0 / R
 	theta = rho_theta / rho - theta0
 	return theta
-end
+end ;nothing
 
 # ╔═╡ 28175473-1386-483f-9443-817cad9fd53e
 begin
 amr_indicator = IndicatorMax(semi_amr, variable = cons2theta)
+
 amr_controller = ControllerThreeLevel(semi_amr, amr_indicator,
 	base_level = 1,
 	med_level = 3, med_threshold = 0.05,
 	max_level = 4, max_threshold = 0.1)
+	
 amr_callback = AMRCallback(semi_amr, amr_controller,
 	interval = 5,
 	adapt_initial_condition = true,
 	adapt_initial_condition_only_refine = true)
 end
 
+# ╔═╡ 7ea5ea01-2cbc-4f0c-9d8b-64a1fc83294c
+md"""Once the callback is set, it can be passed to the ODE solver as a key-word argument. The mesh and solution can be plotted to see where the mesh has been refined. On my machine the solution takes almost half the time for the refined mesh and it shows visibly better results than the static mesh."""
+
 # ╔═╡ f2d35fb1-cba0-419b-b3fc-3fee9a152532
 callbacks_amr = CallbackSet(amr_callback)
 
-# ╔═╡ 7ebed9ca-8f57-4971-a274-bb816437642f
-begin
+# ╔═╡ 029a886b-edec-4238-85a2-39f10dde3f5f
 sol_amr = solve(ode_amr, SSPRK43(thread = OrdinaryDiffEq.True()),
             maxiters = 1.0e7,
             dt = 1.0,
             save_everystep = false, callback = callbacks_amr);
-	
+
+# ╔═╡ 7ebed9ca-8f57-4971-a274-bb816437642f
+begin
 pd_amr = PlotData2D(sol_amr)
 
 theta_perturb_amr = let u = Trixi.wrap_array(sol_amr.u[end], semi_amr)
@@ -365,30 +518,47 @@ begin
 end
 
 # ╔═╡ ef5bba7b-2406-4e82-b509-8cace58bf508
-md""" 
-## Orography
+md"""
 
-The mesh is a rectangular domain of size $[0, 20 \text{ km}] \text{ x } [0, 10 \text{ km}]$.
+# Hydrostatic and non-Hydrostatic waves
 
-The domain is divided into 64 cells along the horizontal direction $x$ and 32 in the vertical direction $z$.
+The versiera di Agnesi mountain profile is used for the following test case.
+
+$h(x, z) = \frac{h_c}{1 + \left( \frac{x-x_c}{a_c}\right)^2}$
+
+The solution evolves until a steady-state solution of a linear hydrostatic flow is reached over a single-peaked mountain. The domain size is $[-120 \text{ km}, 120 \text{ km}] \text{ x } [0, 30 \text{ km}]$.
+
 """
 
 # ╔═╡ d74493e3-747a-42ac-86ec-3f2b0d01eabb
 begin
-a = 10000.0
-L = 240000.0
-H = 30000.0
-peak = 5000.0
-y_b_v = peak / (1 + (L/2 / a)^2)
-alfa_v = (H - y_b_v) * 0.5
+	function mesh_agnesi_profile(; peak = 1.0)
+	a = 10000.0
+	L = 240000.0
+	H = 30000.0
+	y_b = peak / (1 + (L/2 / a)^2)
+	alfa = (H - y_b) * 0.5
 
-f1v(s) = SVector(-L/2, y_b_v + alfa_v * (s + 1))
-f2v(s) = SVector(L/2, y_b_v + alfa_v * (s + 1))
-f3v(s) = SVector(s * L/2, peak / (1 + ( s * L/2)^2 / a^2))
-f4v(s) = SVector(s * L/2, H)
+	f1(s) = SVector(-L/2, y_b + alfa * (s + 1)) 				# left
+	f2(s) = SVector(L/2, y_b + alfa * (s + 1))  				# right
+	f3(s) = SVector(s * L/2, peak / (1 + ( s * L/2)^2 / a^2))	# bottom
+	f4(s) = SVector(s * L/2, H) 								# top
 
-mesh_orography_v = StructuredMesh((32, 32), (f1v, f2v, f3v, f4v), periodicity = (true, false)); nothing
+	mesh = StructuredMesh((32, 32), (f1, f2, f3, f4), periodicity = (true, false))
+		return mesh
+	end
+	mesh_orography_v = mesh_agnesi_profile(peak = 5000.0); nothing
 end
+
+# ╔═╡ fc94d662-30cd-4ef9-9a2e-3df9c4e8a498
+md""" 
+#### Rayleigh damping profiles
+
+On the right-hand side to avoid reflective waves on the wall that introduces noise in the numerical simulation and makes it spurious, an absorbing sponge layer which relaxes the numerical solution is prescribed. The waves are damped in the last 10 km of the top layer.
+
+$S(z) = - \frac{\alpha}{2} \left ( 1 - \cos\left (\pi \frac{z - z_B}{z_T - z_B}\right ) \right)$
+
+"""
 
 # ╔═╡ 5b9eaae3-9278-485d-a119-40004f7bfaec
 function source_terms_damping(u, x, t, equations::CompressibleEulerEquations2D)
@@ -453,7 +623,7 @@ function initial_condition_linear_hydrostatic(x, t, equations::CompressibleEuler
     v2 = 0.0
     
     return prim2cons(SVector(rho, v1, v2 ,p), equations)
-end
+end; nothing
 
 # ╔═╡ e507bb22-287a-46ac-9932-745a103578d2
 begin
@@ -472,17 +642,7 @@ plot(getmesh(pd_hydrostatic_v), aspect_ratio = 10)
 end
 
 # ╔═╡ 2b86d029-f10d-46c4-a1e9-28fbb234663d
-begin
-y_b = 1 / (1 + (L/2 / a)^2)
-alfa = (H - y_b) * 0.5
-
-f1(s) = SVector(-L/2, y_b + alfa * (s + 1))
-f2(s) = SVector(L/2, y_b + alfa * (s + 1))
-f3(s) = SVector( s * L/2, 1.0 / (1 + ((s * L/2)^2 / a^2)))
-f4(s) = SVector( s * L/2, H)
-
-mesh_orography = StructuredMesh((32, 32), (f1, f2, f3, f4), periodicity = (true, false)); nothing
-end
+mesh_orography = mesh_agnesi_profile(); nothing
 
 # ╔═╡ 85431810-87ee-4dec-bbfa-dfff8c5eda04
 begin
@@ -496,7 +656,7 @@ sol_hydrostatic = solve(ode_hydrostatic, SSPRK43(thread = OrdinaryDiffEq.True())
             maxiters = 1.0e7,
             dt = 1.0,
             save_everystep = false);	
-pd_hydrostatic = PlotData2D(sol_hydrostatic)
+pd_hydrostatic = PlotData2D(sol_hydrostatic); nothing
 end
 
 # ╔═╡ 9455e131-3968-4d57-a9f9-3b68bd9dcac8
@@ -522,31 +682,34 @@ end
 md""" 
 ## Mountain Schär
 
-The mesh is a rectangular domain of size $[0, 20 \text{ km}] \text{ x } [0, 10 \text{ km}]$.
+The versiera di Agnesi mountain profile is used for the following test case.
 
-The domain is divided into 64 cells along the horizontal direction $x$ and 32 in the vertical direction $z$.
+$h(x, z) = h_c e^{-\frac{x^2}{a_c^2}} \cos^2\left(\frac{\pi x}{\lambda_c} \right )$
+
+The solution evolves until a steady-state solution of a linear hydrostatic flow is reached, over a single-peaked mountain. The domain size is $[-25, \text{ }25 ] \text{ x } [0, \text{ }21] \text{ km}$.
 """
 
 # ╔═╡ e44793c5-aa7c-4b64-bdc7-52a6bd60980c
 begin
 function mountain_schar_profile()
-a = 5000.0
-L = 50000.0
-H = 30000.0
-lambda_c = 4000.0
-hc = 250.0
-y_b = hc *exp(-(L/2/a)^2)*cospi(L/2/lambda_c)^2
-alfa = (H - y_b) * 0.5
+	a = 5000.0
+	L = 50000.0
+	H = 30000.0
+	lambda_c = 4000.0
+	hc = 250.0
+	y_b = hc * exp(-(L/2/a)^2)*cospi(L/2/lambda_c)^2
+	alfa = (H - y_b) * 0.5
 
-f1(s) = SVector(-L/2, y_b + alfa * (s + 1))
-f2(s) = SVector(L/2, y_b + alfa * (s + 1))
-f3(s) = SVector(s * L/2, hc * exp(-(s * L/2 /a)^2) * cospi(s * L/2 /lambda_c)^2)
-f4(s) = SVector(s * L/2, H)
+	f1(s) = SVector(-L/2, y_b + alfa * (s + 1))
+	f2(s) = SVector(L/2, y_b + alfa * (s + 1))
+	f3(s) = SVector(s * L/2, hc * exp(-(s * L/2 /a)^2) * cospi(s * L/2 /lambda_c)^2)
+	f4(s) = SVector(s * L/2, H)
 
-mesh = StructuredMesh((80, 32), (f1, f2, f3, f4), periodicity = (true, false))
+	mesh = StructuredMesh((80, 32), (f1, f2, f3, f4), periodicity = (true, false))
+	
 	return mesh
 end
-	mesh_schar = mountain_schar_profile()
+	mesh_schar = mountain_schar_profile(); nothing
 end
 
 # ╔═╡ a45a1305-faa2-4c6e-a79b-9c771e7ff7ec
@@ -557,13 +720,13 @@ function source_terms_rayleigh(u, x, t, equations::CompressibleEulerEquations2D)
 	gamma = c_p/c_v
 	p_0 = 100_000.0
 	theta_0 = 280.0
-	z_B = 20000.0
-	z_T = 30000.0
+	z_B = 15000.0
+	z_T = 21000.0
 	Nf = 0.01
 	u0 = 10.0
+	R = c_p - c_v
+	
 	rho, rho_v1, rho_v2, rho_e = u
-   
-    R = c_p - c_v
     
 	v1 = rho_v1 / rho
 	v2 = rho_v2 / rho
@@ -600,7 +763,7 @@ function source_terms_rayleigh(u, x, t, equations::CompressibleEulerEquations2D)
 
 	return SVector(zero(eltype(u)), du2, du3 - g * rho, du4*0.0 - g * rho_v2)
 
-end
+end; nothing
 
 # ╔═╡ 19818181-c2f4-4824-8eed-f938a3b204cf
 function initial_condition_schar(x, t, equations::CompressibleEulerEquations2D)
@@ -620,7 +783,7 @@ function initial_condition_schar(x, t, equations::CompressibleEulerEquations2D)
     v2 = 0.0
     
     return prim2cons(SVector(rho, v1, v2 ,p), equations)
-end
+end; nothing
 
 # ╔═╡ e7958ec8-b910-4e03-90bf-f5e50d5af4e7
 begin
@@ -628,11 +791,12 @@ begin
                                     boundary_conditions = boundary_conditions)
 	
 	tspan_schar = (0.0, 1*3600.0)
-ode_schar = semidiscretize(semi_schar, tspan_schar)
-sol_schar = solve(ode_schar, SSPRK43(thread = OrdinaryDiffEq.True()),
-            maxiters = 1.0e7,
-            dt = 1.0,
-            save_everystep = false);	
+	ode_schar = semidiscretize(semi_schar, tspan_schar)
+	sol_schar = solve(ode_schar, 
+		              SSPRK43(thread = OrdinaryDiffEq.True()),
+                      maxiters = 1.0e7,
+                      dt = 1.0,
+                      save_everystep = false); nothing	
 end
 
 # ╔═╡ f91c4f28-38b1-4267-8c97-d494f4535cb9
@@ -643,22 +807,21 @@ begin
 	    rho_v1 ./ rho .- 20.0
 	end
 	function plot_schar(u1, semi_schar)
-	# Convertire i limiti in km
-	xtick_positions = [-10000, -5000, 5000, 10000]  # Posizioni dei tick in metri
-	ytick_positions = [0, 2000, 4000, 6000, 8000, 10000]          # Posizioni dei tick in metri
+	xtick_positions = [-10000, -5000, 5000, 10000]  
+	ytick_positions = [0, 2000, 4000, 6000, 8000, 10000]
 
-	xtick_labels = ["-10 km", "-5 km", "5 km", "10 km"]  # Etichette da visualizzare
+	xtick_labels = ["-10 km", "-5 km", "5 km", "10 km"] 
 	ytick_labels = ["0 km", "2 km", "4 km", "6 km", "8 km", "10 km"]       
-	# Plotting the vertical velocity component
+	
 	plot(ScalarPlotData2D(u1, semi_schar), title = "Horizontal velocity component [m/s]", aspect_ratio = 2, xlim = (-10000, 10000),  ylim = (0, 10000), 
-     xticks = (xtick_positions, xtick_labels),  # Specifica i tick x
+     xticks = (xtick_positions, xtick_labels), 
      yticks = (ytick_positions, ytick_labels))
 	end
 	plot_schar(u1, semi_schar)
 end
 
-# ╔═╡ cf90b832-eaec-41d1-b42f-eadcf6ab87bb
-pd_schar = PlotData2D(sol_schar)
+# ╔═╡ 77118cea-fd54-4954-944b-c13ed6e0ad1d
+pd_schar = PlotData2D(sol_schar); nothing
 
 # ╔═╡ 5533f9d4-8ce1-489b-adad-6016bc003e2e
 begin
@@ -677,6 +840,22 @@ begin
 	
 	plot_mesh_schar(pd_schar)
 end
+
+# ╔═╡ 8be590dc-9b54-4454-88fc-1fa82e91cd5d
+md"""
+# HOHQ Mesh
+
+
+
+"""
+
+# ╔═╡ 3427fa7c-41f6-4b08-af59-3eb9d72a7f1a
+md"""
+# Conclusions
+
+
+
+"""
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -697,7 +876,7 @@ Trixi = "~0.9.13"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.5"
+julia_version = "1.10.2"
 manifest_format = "2.0"
 project_hash = "7be91f7e8422d7a946ef11d82c3520a089c02f73"
 
@@ -873,27 +1052,37 @@ version = "0.7.6"
 
 [[deps.ColorSchemes]]
 deps = ["ColorTypes", "ColorVectorSpace", "Colors", "FixedPointNumbers", "PrecompileTools", "Random"]
-git-tree-sha1 = "b5278586822443594ff615963b0c09755771b3e0"
+git-tree-sha1 = "c785dfb1b3bfddd1da557e861b919819b82bbe5b"
 uuid = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
-version = "3.26.0"
+version = "3.27.1"
 
 [[deps.ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
-git-tree-sha1 = "b10d0b65641d57b8b4d5e234446582de5047050d"
+git-tree-sha1 = "c7acce7a7e1078a20a285211dd73cd3941a871d6"
 uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
-version = "0.11.5"
+version = "0.12.0"
+
+    [deps.ColorTypes.extensions]
+    StyledStringsExt = "StyledStrings"
+
+    [deps.ColorTypes.weakdeps]
+    StyledStrings = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
 
 [[deps.ColorVectorSpace]]
-deps = ["ColorTypes", "FixedPointNumbers", "LinearAlgebra", "SpecialFunctions", "Statistics", "TensorCore"]
-git-tree-sha1 = "600cc5508d66b78aae350f7accdb58763ac18589"
+deps = ["ColorTypes", "FixedPointNumbers", "LinearAlgebra", "Requires", "Statistics", "TensorCore"]
+git-tree-sha1 = "8b3b6f87ce8f65a2b4f857528fd8d70086cd72b1"
 uuid = "c3611d14-8923-5661-9e6a-0046d554d3a4"
-version = "0.9.10"
+version = "0.11.0"
+weakdeps = ["SpecialFunctions"]
+
+    [deps.ColorVectorSpace.extensions]
+    SpecialFunctionsExt = "SpecialFunctions"
 
 [[deps.Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "Reexport"]
-git-tree-sha1 = "362a287c3aa50601b0bc359053d5c2468f0e7ce0"
+git-tree-sha1 = "64e15186f0aa277e174aa81798f7eb8598e0157e"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
-version = "0.12.11"
+version = "0.13.0"
 
 [[deps.CommonSolve]]
 git-tree-sha1 = "0eee5eb66b1cf62cd6ad1b460238e60e4b09400c"
@@ -919,7 +1108,7 @@ weakdeps = ["Dates", "LinearAlgebra"]
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "1.1.1+0"
+version = "1.1.0+0"
 
 [[deps.CompositionsBase]]
 git-tree-sha1 = "802bb88cd69dfd1509f6670416bd4434015693ad"
@@ -1593,9 +1782,9 @@ version = "1.51.1+0"
 
 [[deps.Libiconv_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "be484f5c92fad0bd8acfef35fe017900b0b73809"
+git-tree-sha1 = "61dfdba58e585066d8bce214c5a51eaa0539f269"
 uuid = "94ce4f54-9a6c-5748-9c1c-f9c7231a4531"
-version = "1.18.0+0"
+version = "1.17.0+1"
 
 [[deps.Libmount_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
@@ -2983,7 +3172,7 @@ version = "0.15.2+0"
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
-version = "5.11.0+0"
+version = "5.8.0+1"
 
 [[deps.libdecor_jll]]
 deps = ["Artifacts", "Dbus_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pango_jll", "Wayland_jll", "xkbcommon_jll"]
@@ -3075,18 +3264,25 @@ version = "1.4.1+2"
 # ╟─2f015b91-8c8a-42c7-8264-d4c722591b64
 # ╟─482f659c-ffbe-44db-bf95-a7bdd86c0640
 # ╠═e1947159-3084-472c-b9a5-fbdf648042ef
+# ╟─5c644ba6-f209-4336-92aa-170164bbe99c
+# ╟─287e2d6c-3b9c-4ba9-9d01-42f014047d81
 # ╠═012b2045-4172-41f6-98bb-c773b92cf1c3
+# ╟─f94051e4-a809-4732-9afe-550c3fb43e44
+# ╟─3fa067c0-7491-4a55-8b9b-16376a48a90b
 # ╠═61de0650-e3cb-4dfe-823b-65ca76b843dd
+# ╟─ea43bccf-c1c0-4661-8438-6bd2466d411b
 # ╠═34f5fbd0-abe8-468d-9a62-30d5e5924b97
 # ╟─f583fefc-d0a6-4586-8c48-616942d29e98
 # ╟─022ee8fb-c758-4f87-8b60-8103cd8719f5
 # ╟─b1290b6e-8a81-41c9-9249-b00d5bfbfd5d
-# ╠═4e055027-c7b4-4086-8a8c-a19bf97769c5
+# ╟─4e055027-c7b4-4086-8a8c-a19bf97769c5
 # ╠═0e50dafd-a179-4c22-8afa-fa96cd45ff43
+# ╟─fdd7e368-c826-49ac-aa9a-5002d0a0cae7
+# ╟─d53556c2-a1d3-48c4-a265-2d0a61b5ec9a
 # ╠═ff35fbf5-53fd-4e9f-9090-5aab89812b31
 # ╠═00f13c5c-9c81-4a68-8885-473d3d61bbf4
-# ╠═22a5f545-e62e-4594-92ba-7d7c90d172d4
-# ╠═f5691db4-fbba-4356-8898-63a33fe56f10
+# ╟─22a5f545-e62e-4594-92ba-7d7c90d172d4
+# ╟─f5691db4-fbba-4356-8898-63a33fe56f10
 # ╠═bbdb5d15-b207-4b62-a2d6-d496ec8af214
 # ╠═d2db4dde-821c-4a4c-80d3-a172b777782a
 # ╟─f4a2de9f-357c-424f-9619-500d3e524c3f
@@ -3094,33 +3290,41 @@ version = "1.4.1+2"
 # ╟─54b02548-63e0-4b07-b982-56c51e6f450a
 # ╟─695bf5b1-2f99-4f92-8c35-2eb0279a5663
 # ╟─e6cdc448-565e-4e50-a726-75847ef13bc5
+# ╟─bb0b8663-98a9-44ab-ac7c-4c10ba56378e
+# ╠═83825531-2488-4133-89c8-a88743cf10b1
 # ╟─6a6fd640-396e-41fa-8c6b-977144181ad1
 # ╠═8fc7fe79-5b78-49a9-9bca-2179460324cc
 # ╠═5bb04fa4-36f4-4207-82f1-33a64797ceae
 # ╟─956d6c3d-0138-4791-95a9-9f8525570a32
 # ╟─0fc2fdc1-4d45-428f-9a47-590409646921
 # ╠═98a46c89-8805-4461-8528-3bd5f4433e31
+# ╟─d9f92197-b9dc-4820-aca0-ad3dd2e30080
 # ╠═9051a970-0f5f-4019-b8ee-37b44753865b
 # ╠═28175473-1386-483f-9443-817cad9fd53e
-# ╠═498d3262-df89-408e-8ede-f32268894709
+# ╟─498d3262-df89-408e-8ede-f32268894709
+# ╟─7ea5ea01-2cbc-4f0c-9d8b-64a1fc83294c
 # ╠═f2d35fb1-cba0-419b-b3fc-3fee9a152532
-# ╠═7ebed9ca-8f57-4971-a274-bb816437642f
+# ╠═029a886b-edec-4238-85a2-39f10dde3f5f
+# ╟─7ebed9ca-8f57-4971-a274-bb816437642f
 # ╟─c886e8ca-8506-4848-a342-2613747cddb1
-# ╠═ef5bba7b-2406-4e82-b509-8cace58bf508
+# ╟─ef5bba7b-2406-4e82-b509-8cace58bf508
 # ╠═d74493e3-747a-42ac-86ec-3f2b0d01eabb
-# ╠═5b9eaae3-9278-485d-a119-40004f7bfaec
-# ╠═ebecb24d-502e-4358-828f-7b3d03129d5f
 # ╟─e507bb22-287a-46ac-9932-745a103578d2
-# ╠═2b86d029-f10d-46c4-a1e9-28fbb234663d
-# ╠═85431810-87ee-4dec-bbfa-dfff8c5eda04
-# ╠═9455e131-3968-4d57-a9f9-3b68bd9dcac8
-# ╠═2617f478-5556-4ab1-a506-a0a7bc0238cc
+# ╟─fc94d662-30cd-4ef9-9a2e-3df9c4e8a498
+# ╠═5b9eaae3-9278-485d-a119-40004f7bfaec
+# ╟─ebecb24d-502e-4358-828f-7b3d03129d5f
+# ╟─2b86d029-f10d-46c4-a1e9-28fbb234663d
+# ╟─85431810-87ee-4dec-bbfa-dfff8c5eda04
+# ╟─9455e131-3968-4d57-a9f9-3b68bd9dcac8
+# ╟─2617f478-5556-4ab1-a506-a0a7bc0238cc
 # ╠═e44793c5-aa7c-4b64-bdc7-52a6bd60980c
-# ╠═a45a1305-faa2-4c6e-a79b-9c771e7ff7ec
-# ╠═19818181-c2f4-4824-8eed-f938a3b204cf
-# ╠═e7958ec8-b910-4e03-90bf-f5e50d5af4e7
-# ╠═f91c4f28-38b1-4267-8c97-d494f4535cb9
-# ╠═cf90b832-eaec-41d1-b42f-eadcf6ab87bb
 # ╟─5533f9d4-8ce1-489b-adad-6016bc003e2e
+# ╟─a45a1305-faa2-4c6e-a79b-9c771e7ff7ec
+# ╟─19818181-c2f4-4824-8eed-f938a3b204cf
+# ╟─e7958ec8-b910-4e03-90bf-f5e50d5af4e7
+# ╟─f91c4f28-38b1-4267-8c97-d494f4535cb9
+# ╟─77118cea-fd54-4954-944b-c13ed6e0ad1d
+# ╠═8be590dc-9b54-4454-88fc-1fa82e91cd5d
+# ╠═3427fa7c-41f6-4b08-af59-3eb9d72a7f1a
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
