@@ -191,7 +191,7 @@ mesh = StructuredMesh(cells_per_dimension,
 md""" 
 #### DGSEM Discretization
 
-DGSEM Flux differencing semi-discretization has been choosen for these test cases. 
+DGSEM Flux differencing semi-discretization has been chosen for these test cases. 
 - Third order polynomial degree
 - LMARS flux for the surface integral
 - Kennedy-Gruber flux for the volume integral (symmetric!)
@@ -406,7 +406,7 @@ end
 md""" 
 ## Adaptive-Mesh Refinement
 
-Simulations in Trixi.jl can be speed up maintaining an overall good accuracy through Adaptive Mesh Refinement. The hierarchical Cartesian mesh is locally refined, based on a choosen reference variable.
+Simulations in Trixi.jl can be sped up maintaining an overall good accuracy through Adaptive Mesh Refinement. The hierarchical Cartesian mesh is locally refined, based on a chosen reference variable.
 
 In Trixi.jl some callback functions can be defined, for numerical analysis and step size control. The AMR function is also defined passing an AMR Callback to the ODE solver, as shown in this example.
 
@@ -845,6 +845,18 @@ end
 md"""
 # HOHQ Mesh
 
+[HOHQMesh.jl](https://github.com/trixi-framework/HOHQMesh.jl)
+
+
+HOHQ Mesh is a library that allows the user to define high order hex/quadrilater meshes even for complex geometries that cannot be easily described by analytical functions, such as irregular surfaces.
+
+As an example, here is shown a generic mountain profile given by single data point and interpolated. The code is available in the repository.
+"""
+
+# ╔═╡ 5ef654ad-2efc-439e-a759-7cee50cbea6c
+md"""
+# Moist Euler Equations
+
 
 
 """
@@ -853,7 +865,15 @@ md"""
 md"""
 # Conclusions
 
+Adding additional equations
 
+SVG to HOHQ Mesh
+
+Trixi Atmo
+
+Moist Euler
+
+Link to repository
 
 """
 
@@ -3259,7 +3279,7 @@ version = "1.4.1+2"
 
 # ╔═╡ Cell order:
 # ╟─ad6ddb85-006a-4ee6-92da-4f56ea4780b0
-# ╟─fe03cfcd-bd4b-4c77-99b4-719f51dbe893
+# ╠═fe03cfcd-bd4b-4c77-99b4-719f51dbe893
 # ╟─065746f1-1deb-49c4-854d-457a8f7919c2
 # ╟─2f015b91-8c8a-42c7-8264-d4c722591b64
 # ╟─482f659c-ffbe-44db-bf95-a7bdd86c0640
@@ -3296,7 +3316,7 @@ version = "1.4.1+2"
 # ╠═8fc7fe79-5b78-49a9-9bca-2179460324cc
 # ╠═5bb04fa4-36f4-4207-82f1-33a64797ceae
 # ╟─956d6c3d-0138-4791-95a9-9f8525570a32
-# ╟─0fc2fdc1-4d45-428f-9a47-590409646921
+# ╠═0fc2fdc1-4d45-428f-9a47-590409646921
 # ╠═98a46c89-8805-4461-8528-3bd5f4433e31
 # ╟─d9f92197-b9dc-4820-aca0-ad3dd2e30080
 # ╠═9051a970-0f5f-4019-b8ee-37b44753865b
@@ -3325,6 +3345,7 @@ version = "1.4.1+2"
 # ╟─f91c4f28-38b1-4267-8c97-d494f4535cb9
 # ╟─77118cea-fd54-4954-944b-c13ed6e0ad1d
 # ╠═8be590dc-9b54-4454-88fc-1fa82e91cd5d
+# ╠═5ef654ad-2efc-439e-a759-7cee50cbea6c
 # ╠═3427fa7c-41f6-4b08-af59-3eb9d72a7f1a
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

@@ -1,4 +1,6 @@
 [deps]
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+HOHQMesh = "e4f4c7b8-17cb-445a-93c5-f69190ed6c8c"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
