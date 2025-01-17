@@ -7,7 +7,8 @@ for instructions on running Pluto notebooks. However is it strongly recommended 
 ```julia
 Pluto.run(threads = 8)
 ```
-In order to run the examples, navigate to the 'codes' directory and activate the environment within that folder and install the required dependecies:
+In order to run the examples, navigate to the `codes` directory, activate the environment within that folder, and install the required dependencies:
+
 ```julia
 'import Pkg; Pkg.activate(pwd()); Pkg.instantiate();
 ```
