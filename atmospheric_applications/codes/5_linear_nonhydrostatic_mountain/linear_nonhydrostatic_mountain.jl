@@ -158,17 +158,6 @@ SSPRK43(thread = OrdinaryDiffEq.True()),
 
 summary_callback()
 
-pd = PlotData2D(sol)
-a = plot(pd["v2"], aspect_ratio = 20)
-savefig(a,"test_v2_mountain_nc_funzionante_nonlinear.pdf")
-
-a = plot(pd["v1"], aspect_ratio = 20)
-savefig(a,"test_v1_mountain_nc_funzionante_nonlinear.pdf")
-
-a = plot(sol, aspect_ratio = 20)
-savefig(a,"test_sol_mountain_nc_funzionante_nonlinear.pdf")
-
-
 # Visulization: 
 
 # Compute the potential temperature perturbation

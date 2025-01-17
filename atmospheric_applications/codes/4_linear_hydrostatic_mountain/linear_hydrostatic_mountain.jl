@@ -154,12 +154,15 @@ SSPRK43(thread = OrdinaryDiffEq.True()),
 
 summary_callback()
 
-pd = PlotData2D(sol)
-a = plot(pd["v2"], aspect_ratio = 20)
-savefig(a,"test_v2_mountain_nc_funzionante.pdf")
+# Visulization: 
 
-a = plot(pd["v1"], aspect_ratio = 20)
-savefig(a,"test_v1_mountain_nc_funzionante.pdf")
+# Compute the potential temperature perturbation
+horizontal_velocity = let u = Trixi.wrap_array(sol.u[end], semi)
+    @unpack u0 = linear_hydrostatic_setup
+    rho = u[1, :, : ,:]
+    rho_v1 = u[2, : ,: ,:]
+    rho_v1 ./ rho .- u0
+end
 
-a = plot(sol, aspect_ratio = 20)
-savefig(a,"test_sol_mountain_nc_funzionante.pdf")
+# Plotting the vertical velocity component
+plot(ScalarPlotData2D(horizontal_velocity, semi), title = "Horizontal velocity component [m/s]", aspect_ratio = 5)

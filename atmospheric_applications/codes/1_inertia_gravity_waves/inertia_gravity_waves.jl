@@ -138,6 +138,3 @@ end
 
 # Plotting the vertical velocity component
 plot(ScalarPlotData2D(vertical_velocity, semi), title = "Vertical velocity component [m/s]", aspect_ratio = 5)
-
-
-

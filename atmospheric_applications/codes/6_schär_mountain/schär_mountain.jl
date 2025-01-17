@@ -127,7 +127,7 @@ semi = SemidiscretizationHyperbolic(mesh, equations, schär_setup, solver, sourc
 ###############################################################################
 # ODE solvers, callbacks etc.
 
-tspan = (0.0, 1*3600.0) #5 hours.
+tspan = (0.0, 1*3600.0) #1 hour.
 
 ode = semidiscretize(semi, tspan)
 

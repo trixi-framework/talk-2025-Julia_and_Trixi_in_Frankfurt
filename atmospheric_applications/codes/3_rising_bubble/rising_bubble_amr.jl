@@ -189,27 +189,3 @@ end
 
 # Plotting the potential temperature perturbation
 plot(ScalarPlotData2D(theta_perturb, semi), title = "Potential Temperature perturbation [K]")
-
-using Trixi2Vtk
-
-using Trixi
-
-function process_solutions(folder_name::String)
-    
-    out_folder = joinpath(folder_name, "out")
-
-    if !isdir(out_folder)
-        println("Folder does not exist: $out_folder")
-        return
-    end
-
-    files = readdir(out_folder)
-
-    solution_files = filter(file -> startswith(file, "solution"), files)
-
-    for solution_file in solution_files
-        input_path = joinpath(out_folder, solution_file)
-        println("Processing: $input_path")
-        trixi2vtk(input_path, output_directory="vtk")
-    end
-end

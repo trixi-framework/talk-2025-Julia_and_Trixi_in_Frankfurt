@@ -27,3 +27,12 @@ The material for the brief introduction to Julia is contained in the directory
 [Pluto.jl](https://github.com/fonsp/Pluto.jl) notebook that can be updated
 interactively. You can also see a 
 [static preview online](https://trixi-framework.github.io/talk-2025-Julia_and_Trixi_in_Frankfurt/Introduction_to_Julia.html).
+
+### Atmospheric applications
+
+The material for the atmospheric applications is contained in the directory
+`atmospheric_applications` in this repository. It is written as a
+[Pluto.jl](https://github.com/fonsp/Pluto.jl) notebook that can be updated
+interactively. You can also see a 
+[static preview online](https://trixi-framework.github.io/talk-2025-Julia_and_Trixi_in_Frankfurt/atmospheric_applications.html). 
+In addition to the notebook, the repository also includes example code for atmospheric applications.
