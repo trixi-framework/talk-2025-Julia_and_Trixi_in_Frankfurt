@@ -79,7 +79,7 @@ According to the official website
 
 # ╔═╡ 95450718-7aac-41c2-9c7f-0e8196b83187
 md"""
-## A brief tour of Julia
+# A brief tour of Julia
 """
 
 # ╔═╡ d297e292-c748-4a69-a97f-74aafa245057
@@ -93,6 +93,9 @@ md"""
 # ╔═╡ 4e5d0294-c7c7-41da-8378-e8ad8d8d8de3
 println("Hello world")
 
+# ╔═╡ 4e77f544-d572-49c0-92c1-c5c406551488
+md"## Arrays"
+
 # ╔═╡ c55d620a-e5bb-410f-a891-3ce75e02876e
 # Arrays
 sum([1, 2, 3, 4, 5])
@@ -100,28 +103,27 @@ sum([1, 2, 3, 4, 5])
 # ╔═╡ ed9fad7e-42ef-4393-9f8c-09e2242a95f4
 [1 2; π 4]
 
+# ╔═╡ e6c3c5d7-e496-4c47-a4b7-41deb34c667e
+rand(2, 2, 2)
+
 # ╔═╡ 2d612d09-5f5e-4947-944a-269dc5bf7116
 md"""
-### Plotting
+## Plotting
 """
 
 # ╔═╡ 136bfdcb-95d6-40c2-8d76-9677b3e86e16
-let
-	n = 1_000
-	A = randn(n, n)
-	λ = eigvals(A)
+let n = 1_000
+	λ = eigvals(randn(n, n))
 	fig = Figure(size = (300, 300))
-	ax = Axis(fig[1, 1],
-			  xlabel = L"\mathrm{Re}\, \lambda",
-			  ylabel = L"\mathrm{Im}\, \lambda",
-			  aspect = DataAspect())
+	ax = Axis(fig[1, 1], aspect = DataAspect(),
+			  xlabel = L"\mathrm{Re}\, \lambda", ylabel = L"\mathrm{Im}\, \lambda")
 	scatter!(ax, real(λ), imag(λ); markersize = 6)
 	fig
 end
 
 # ╔═╡ f505a948-5116-47c1-9374-1e39a049ef1b
 md"""
-### Sparse linear algebra
+## Sparse linear algebra
 """
 
 # ╔═╡ c9e9578f-0987-48fa-94bd-a4f16d481b93
@@ -141,7 +143,7 @@ end
 
 # ╔═╡ fdd3ca99-d21a-46eb-8506-f1176de14111
 md"""
-### Functions
+## Functions
 """
 
 # ╔═╡ 87c9646c-39c8-4f1c-9e08-a3059b307488
@@ -163,7 +165,7 @@ say_hello(π)
 
 # ╔═╡ 7aadf1af-9925-4b6a-b054-1074e7ac1f83
 md"""
-### Types
+## Types
 
 Everything in Julia has a type.
 """
@@ -190,8 +192,7 @@ md"""
 md"""
 ## Efficiency
 
-- 3D compressible Euler simulations, Taylor-Green vortex
-- entropy-stable methods on curved meshes
+- 3D compressible Euler simulations, Taylor-Green vortex, entropy-stable on curved mesh
 - Credit: [Ranocha et al. (2023)](https://doi.org/10.1145/3625559) 
   and Schlottke-Lakemper et al. (2025), in preparation
 """
@@ -322,7 +323,7 @@ md"""
 
 # ╔═╡ ed2485ce-42c1-4fea-83d7-8892dc31819f
 md"""
-### Why should I care about reproducibility?
+## Why should I care about reproducibility?
 
 > One of the strengths of this contribution is the
 > accessibility it provides to the algorithms. Computational
@@ -336,14 +337,9 @@ md"""
 *Anonymous Reviewer, [ACM TOMS](https://doi.org/10.1145/3625559)*
 """
 
-# ╔═╡ 1ca05140-f30c-4d5c-8497-1f846ed27d79
-md"""
-## Teaching
-"""
-
 # ╔═╡ 2803b1b9-0189-4697-a330-033a8cdf700a
 md"""
-### Taylor series
+## Teaching: Taylor series
 
 Consider the Taylor series of the sine function
 
@@ -385,7 +381,7 @@ end
 
 # ╔═╡ fb81bb93-6d32-4acb-ad48-4d7e79484e55
 md"""
-### Riemann sums for integrals
+## Teaching: Riemann sums for integrals
 """
 
 # ╔═╡ afbcfc28-a0e7-4c82-8174-cde71bef8ca2
@@ -468,7 +464,7 @@ end
 
 # ╔═╡ 47749a9c-0e17-47bb-a4a3-879f486b6b8d
 md"""
-### Numerical differentiation
+## Teaching: Numerical differentiation
 
 We consider the error of forward differences
 
@@ -513,7 +509,7 @@ end
 
 # ╔═╡ 75489d6f-5bae-4a08-bd9f-631a8738bfda
 md"""
-### Wave equation
+## Teaching: Wave equation
 
 Consider the wave equation
 
@@ -557,6 +553,15 @@ md"""
 (``\Delta x`` = $(1 / N))
 """
 
+# ╔═╡ ed971832-deb2-4f19-90d8-eaf63fc6ceb5
+md"""
+# What's next
+
+- Questions?
+- Introduction to Trixi.jl
+- Applications of Trixi.jl
+"""
+
 # ╔═╡ 73673166-cd9a-11ef-151e-a3cfa58f09ad
 md"""
 # Appendix
@@ -567,49 +572,10 @@ You can find code and utility material in this appendix.
 # ╔═╡ 1410d33d-faad-45d6-b14c-0aa2f7cbad52
 space = html"<br><br><br>";
 
-# ╔═╡ d2334c3b-d2bc-4766-80f5-4d7dcf9abedf
-space
-
-# ╔═╡ b83a5ade-a45f-4105-875f-099fb8878ff4
-space
-
-# ╔═╡ 29c648a0-8251-4265-98a2-c327bae314fa
-space
-
-# ╔═╡ 72cbf504-f4f7-4785-8967-828523c7e132
-space
-
-# ╔═╡ bc00e177-a917-4aea-b1bf-38031226540f
-space
-
 # ╔═╡ 4088a36c-55a4-4ecf-a06a-21c5383b14be
 space
 
 # ╔═╡ 52eec6b4-3eb0-4f59-9de8-a21b8f6f8ad9
-space
-
-# ╔═╡ ab533522-0cc6-439f-99b9-089c8bb33f24
-space
-
-# ╔═╡ f9ff9ee2-1525-4025-accd-a2e8cdf9fee6
-space
-
-# ╔═╡ 930ad972-9f2b-453d-9625-c2f2db6b06dd
-space
-
-# ╔═╡ 76e1ead9-d252-40b2-856c-42081733cd89
-space
-
-# ╔═╡ 9ac3da5e-cd27-4795-bbe2-d7a4d3a7e10e
-space
-
-# ╔═╡ fc40a450-603e-45b7-a230-ad3b7e67a8ad
-space
-
-# ╔═╡ fc41596d-bc9f-4306-9e04-95a0f8887b93
-space
-
-# ╔═╡ 8153ac69-f5aa-4b2a-b305-78bfc5cf84c8
 space
 
 # ╔═╡ 830fe5c7-f9f8-4fd3-8cc4-7dc8d0b72252
@@ -3551,22 +3517,19 @@ version = "1.4.1+2"
 
 # ╔═╡ Cell order:
 # ╟─0fa663dd-229b-48b6-8356-0e07a87167ce
-# ╟─d2334c3b-d2bc-4766-80f5-4d7dcf9abedf
-# ╟─b83a5ade-a45f-4105-875f-099fb8878ff4
 # ╟─95450718-7aac-41c2-9c7f-0e8196b83187
 # ╠═d297e292-c748-4a69-a97f-74aafa245057
 # ╠═be86cb5d-2827-44b5-b18e-a41a43cf7bdd
 # ╠═4e5d0294-c7c7-41da-8378-e8ad8d8d8de3
+# ╟─4e77f544-d572-49c0-92c1-c5c406551488
 # ╠═c55d620a-e5bb-410f-a891-3ce75e02876e
 # ╠═ed9fad7e-42ef-4393-9f8c-09e2242a95f4
-# ╟─29c648a0-8251-4265-98a2-c327bae314fa
+# ╠═e6c3c5d7-e496-4c47-a4b7-41deb34c667e
 # ╟─2d612d09-5f5e-4947-944a-269dc5bf7116
 # ╠═136bfdcb-95d6-40c2-8d76-9677b3e86e16
-# ╟─72cbf504-f4f7-4785-8967-828523c7e132
 # ╟─f505a948-5116-47c1-9374-1e39a049ef1b
 # ╠═c9e9578f-0987-48fa-94bd-a4f16d481b93
 # ╠═99416d35-ee22-48a4-a91e-7c8dabe6a85a
-# ╟─bc00e177-a917-4aea-b1bf-38031226540f
 # ╟─fdd3ca99-d21a-46eb-8506-f1176de14111
 # ╠═87c9646c-39c8-4f1c-9e08-a3059b307488
 # ╠═e4111837-89a9-4266-a9d0-57e175905e69
@@ -3584,34 +3547,26 @@ version = "1.4.1+2"
 # ╟─81af377b-1ee9-4934-9a4c-2afb34f5c7dd
 # ╟─c471f9c9-e0bd-49b7-ad77-e0fa4e740c41
 # ╟─f9ded56e-f49d-4c29-bac2-50ac0a95a8da
-# ╟─ab533522-0cc6-439f-99b9-089c8bb33f24
 # ╟─2075065d-01bd-4409-8379-80b7b8e3e04a
-# ╟─f9ff9ee2-1525-4025-accd-a2e8cdf9fee6
-# ╟─930ad972-9f2b-453d-9625-c2f2db6b06dd
 # ╟─ed2485ce-42c1-4fea-83d7-8892dc31819f
-# ╟─76e1ead9-d252-40b2-856c-42081733cd89
-# ╟─9ac3da5e-cd27-4795-bbe2-d7a4d3a7e10e
-# ╟─1ca05140-f30c-4d5c-8497-1f846ed27d79
 # ╟─2803b1b9-0189-4697-a330-033a8cdf700a
 # ╟─17e4d1c5-538a-4a3f-8c17-d043c5286421
 # ╟─409d6e48-e10a-4678-bd30-1d9612f3e106
-# ╟─fc40a450-603e-45b7-a230-ad3b7e67a8ad
 # ╟─fb81bb93-6d32-4acb-ad48-4d7e79484e55
 # ╟─afbcfc28-a0e7-4c82-8174-cde71bef8ca2
 # ╟─4d86c2f6-454b-4733-89ab-66ba32de545a
 # ╟─b03d54f6-997a-4409-ac6a-8f77e70874f3
-# ╟─fc41596d-bc9f-4306-9e04-95a0f8887b93
 # ╟─47749a9c-0e17-47bb-a4a3-879f486b6b8d
 # ╟─d2f5ae6c-06a7-424c-8cd4-7d8c5e70c6b5
 # ╟─f8b0caee-c056-4b3d-8181-82989992a04e
 # ╟─a61eca4e-eeb0-4275-bb34-2a0c385c6562
-# ╟─8153ac69-f5aa-4b2a-b305-78bfc5cf84c8
 # ╟─75489d6f-5bae-4a08-bd9f-631a8738bfda
 # ╟─2bc2df6a-b7a8-4013-8d4b-4e41cf99ab7a
 # ╟─d8b4e87b-a6a4-41d0-8c3c-5adf82b8d730
 # ╟─5d25f3fc-05ca-4514-9a07-92cf4cdce534
 # ╟─3596322b-25d7-4b8b-bdda-82e823785c1e
 # ╟─34f56ea0-df6d-419e-bde5-3a307ef14473
+# ╟─ed971832-deb2-4f19-90d8-eaf63fc6ceb5
 # ╟─830fe5c7-f9f8-4fd3-8cc4-7dc8d0b72252
 # ╟─734cff6f-0b2f-46b2-9f94-d27f4be68cc3
 # ╟─addff5ee-8f78-4ed9-8411-cad380cb324f
