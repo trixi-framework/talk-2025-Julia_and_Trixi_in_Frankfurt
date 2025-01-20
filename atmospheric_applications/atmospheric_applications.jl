@@ -533,6 +533,15 @@ begin
 	plot(ScalarPlotData2D(theta_perturb_amr, semi_amr), title = "Potential Temperature perturbation [K], t = 1000 s")
 end
 
+# ╔═╡ a79a72a8-4fa6-4146-a0ae-108bdeac3ce7
+md"""# AMR Simulation bubble rising"""
+
+# ╔═╡ d9dc8eae-1f1c-4b2b-aaa1-73cdc6ce1f4e
+ html"""<video width="720" height="480" controls>
+  <source src="https://github.com/trixi-framework/talk-2025-Julia_and_Trixi_in_Frankfurt/raw/refs/heads/main/atmospheric_applications/animation_bubble_amr.mp4">
+Your browser does not support the video tag.
+</video>"""
+
 # ╔═╡ ef5bba7b-2406-4e82-b509-8cace58bf508
 md"""
 
@@ -3795,6 +3804,8 @@ version = "1.4.1+2"
 # ╟─7ebed9ca-8f57-4971-a274-bb816437642f
 # ╟─a24ec0ef-ab4c-4387-961f-a3822b86c266
 # ╟─c886e8ca-8506-4848-a342-2613747cddb1
+# ╟─a79a72a8-4fa6-4146-a0ae-108bdeac3ce7
+# ╟─d9dc8eae-1f1c-4b2b-aaa1-73cdc6ce1f4e
 # ╟─ef5bba7b-2406-4e82-b509-8cace58bf508
 # ╠═d74493e3-747a-42ac-86ec-3f2b0d01eabb
 # ╟─4a00ea10-8315-4072-b3ee-1b6b35d72331
