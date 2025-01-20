@@ -9,18 +9,13 @@ This repository contains some material introducting the programming language
 [Trixi.jl](https://github.com/trixi-framework/Trixi.jl), providing adaptive
 numerical methods for conservation laws in Julia.
 
-
-## Getting started
-
-- TODO: Other material
-
-### Installing Julia
+## Installing Julia
 
 To obtain Julia, go to https://julialang.org/downloads/ and download the 
 long-term support (LTS) release v1.10. We recommend to use juliaup as
 described on the website.
 
-### Introduction to Julia
+## Introduction to Julia
 
 The material for the brief introduction to Julia is contained in the directory
 `introduction_to_julia` in this repository. It is written as a
@@ -28,7 +23,7 @@ The material for the brief introduction to Julia is contained in the directory
 interactively. You can also see a 
 [static preview online](https://trixi-framework.github.io/talk-2025-Julia_and_Trixi_in_Frankfurt/Introduction_to_Julia.html).
 
-### Introduction to Trixi.jl
+## Introduction to Trixi.jl
 
 The material for the brief introduction to Trixi.jl is contained in the directory
 `introduction_to_trixi` in this repository. It is written as a
@@ -36,7 +31,7 @@ The material for the brief introduction to Trixi.jl is contained in the director
 interactively. You can also see a 
 [static preview online](https://trixi-framework.github.io/talk-2025-Julia_and_Trixi_in_Frankfurt/Introduction_to_Trixi.html).
 
-### Atmospheric applications
+## Atmospheric applications
 
 The material for the atmospheric applications is contained in the directory
 `atmospheric_applications` in this repository. It is written as a
