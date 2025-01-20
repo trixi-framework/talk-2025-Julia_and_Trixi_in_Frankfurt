@@ -61,7 +61,7 @@ equations  = CompressibleEulerEquations2D(gamma)
 
 # ╔═╡ 5c644ba6-f209-4336-92aa-170164bbe99c
 md""" 
-#### Gravity source term
+## Gravity source term
 Pointwise source terms can be easily added to the right-hand side of the equations with user-defined functions or by choosing from the built-in source terms functions in Trixi.jl.
 """
 
@@ -103,7 +103,7 @@ end
 
 # ╔═╡ f94051e4-a809-4732-9afe-550c3fb43e44
 md""" 
-#### Initial condition: warm rising bubble
+## Initial condition: warm rising bubble
 In an hydrostatic balance steady state condition with constant potential temperature $\theta = 300$, the motion is driven by the following perturbation.
 """
 
@@ -160,7 +160,7 @@ end
 
 # ╔═╡ ea43bccf-c1c0-4661-8438-6bd2466d411b
 md""" 
-#### Boundary conditions
+## Boundary conditions
 Along the $x$-direction periodic boundary conditions are employed and for the top and bottom walls the boundary conditions are no-flux.
 """
 
@@ -172,7 +172,7 @@ boundary_conditions = (x_neg = boundary_condition_periodic,
 
 # ╔═╡ f583fefc-d0a6-4586-8c48-616942d29e98
 md""" 
-#### Defining a simple Mesh
+## Defining a simple Mesh
 
 The mesh is a rectangular domain of size $[0, 20 \text{ km}] \text{ x } [0, 10 \text{ km}]$.
 
@@ -196,7 +196,7 @@ mesh = StructuredMesh(cells_per_dimension,
 
 # ╔═╡ d53556c2-a1d3-48c4-a265-2d0a61b5ec9a
 md""" 
-#### DGSEM Discretization
+## DGSEM Discretization
 
 DGSEM Flux differencing semi-discretization has been chosen for these test cases. 
 - Third order polynomial degree
@@ -243,7 +243,7 @@ end
 
 # ╔═╡ 22a5f545-e62e-4594-92ba-7d7c90d172d4
 md""" 
-#### Creating ODE function and defining the time integrator.
+## Creating ODE function and defining the time integrator.
 
 Once the ODE has been built, we are ready to pass our RHS function to the ODE solver. The simulation is run using SSPRK43 with multiple-threads for a physical time of $T = 1000$ s.
 """
@@ -271,7 +271,7 @@ end
   ╠═╡ =#
 
 # ╔═╡ 14670101-6792-4587-8efb-865627b4e446
-md"### Initial condition rising bubble"
+md"# Initial condition rising bubble"
 
 # ╔═╡ 54b02548-63e0-4b07-b982-56c51e6f450a
 begin
@@ -294,7 +294,7 @@ plot(ScalarPlotData2D(theta_perturb_0, semi), title = "Potential Temperature per
 end
 
 # ╔═╡ 695bf5b1-2f99-4f92-8c35-2eb0279a5663
-md"### Solution at t = 1000s  rising bubble"
+md"# Solution at t = 1000s  rising bubble"
 
 # ╔═╡ e6cdc448-565e-4e50-a726-75847ef13bc5
 begin
@@ -317,7 +317,7 @@ plot(ScalarPlotData2D(theta_perturb, semi), title = "Potential Temperature pertu
 end
 
 # ╔═╡ bb0b8663-98a9-44ab-ac7c-4c10ba56378e
-md"### Elixir Summary"
+md"# Elixir Summary"
 
 # ╔═╡ 83825531-2488-4133-89c8-a88743cf10b1
 begin 
@@ -374,7 +374,7 @@ end
 
 # ╔═╡ 6a6fd640-396e-41fa-8c6b-977144181ad1
 md""" 
-## Warped-Curvilinear Mesh.
+# Warped-Curvilinear Mesh
 
 We consider the same mesh and apply a warping transformation.
 
@@ -411,7 +411,7 @@ end
 
 # ╔═╡ 0fc2fdc1-4d45-428f-9a47-590409646921
 md""" 
-## Adaptive-Mesh Refinement
+# Adaptive-Mesh Refinement
 
 Simulations in Trixi.jl can be sped up maintaining an overall good accuracy through Adaptive Mesh Refinement. The hierarchical Cartesian mesh is locally refined, based on a chosen reference variable.
 
@@ -452,6 +452,9 @@ semi_amr = SemidiscretizationHyperbolic(mesh_amr,
                                     	boundary_conditions = 			           boundary_conditions_amr)
 ode_amr = semidiscretize(semi_amr, (0.0, 1000.0)); nothing	
 end
+
+# ╔═╡ a523d66d-2c10-4721-b28e-dbb565f5f958
+md"""## Setting up AMR Callback"""
 
 # ╔═╡ 498d3262-df89-408e-8ede-f32268894709
 function cons2theta(u, equations::CompressibleEulerEquations2D)
@@ -495,6 +498,9 @@ sol_amr = solve(ode_amr, SSPRK43(thread = OrdinaryDiffEq.True()),
             dt = 1.0,
             save_everystep = false, callback = callbacks_amr);
 
+# ╔═╡ a9820dab-1cfd-4f17-ba76-8c5a202be9f0
+md"""## Solution at $t = 1000$ s rising bubble - AMR"""
+
 # ╔═╡ 7ebed9ca-8f57-4971-a274-bb816437642f
 begin
 pd_amr = PlotData2D(sol_amr)
@@ -518,6 +524,9 @@ plot(ScalarPlotData2D(theta_perturb_amr, semi_amr), title = "Potential Temperatu
 
 plot!(getmesh(pd_amr))
 end
+
+# ╔═╡ a24ec0ef-ab4c-4387-961f-a3822b86c266
+md"""## Solution at $t = 1000$ s rising bubble - AMR"""
 
 # ╔═╡ c886e8ca-8506-4848-a342-2613747cddb1
 begin
@@ -562,9 +571,12 @@ begin
 	mesh_orography_v = mesh_agnesi_profile(peak = 5000.0); nothing
 end
 
+# ╔═╡ 4a00ea10-8315-4072-b3ee-1b6b35d72331
+md"""## Mesh for the Agnesi profile with a peak of 5km"""
+
 # ╔═╡ fc94d662-30cd-4ef9-9a2e-3df9c4e8a498
 md""" 
-#### Rayleigh damping profiles
+## Rayleigh damping profiles
 
 On the right-hand side, to avoid reflective waves on the walls that introduce noise into the numerical simulation and makes it spurious, an absorbing sponge layer is prescribed. This layer relaxes the numerical solution. The waves are damped in the last 10 km of the top layer.
 
@@ -574,12 +586,9 @@ $S(z) = - \frac{\alpha}{2} \left ( 1 - \cos\left (\pi \frac{z - z_B}{z_T - z_B}\
 
 # ╔═╡ 5b9eaae3-9278-485d-a119-40004f7bfaec
 function source_terms_damping(u, x, t, equations::CompressibleEulerEquations2D)
-	c_p = 1004.0; c_v = 717.0; p_0 = 100_000.0
-	gamma = equations.gamma
-	u0 = 20.0
-	z_B = 15000.0; z_T = 30000.0
-	T_0 = 250.0
-	g = 9.81
+	c_p = 1004.0; c_v = 717.0; p_0 = 100_000.0 ;gamma = equations.gamma
+	u0 = 20.0 ; z_B = 15000.0; z_T = 30000.0; T_0 = 250.0; g = 9.81
+	
 	R = c_p - c_v
 	Nf = g/sqrt(c_p*T_0)
 	rho, rho_v1, rho_v2, rho_e = u
@@ -672,7 +681,7 @@ pd_hydrostatic = PlotData2D(sol_hydrostatic); nothing
 end
 
 # ╔═╡ 492a2130-8bf5-4a00-adf5-8f39656cebda
-md""" ##### Solution linear hydrostatic mountain at t = 5h"""
+md""" ## Solution linear hydrostatic mountain at t = 5h"""
 
 # ╔═╡ 9455e131-3968-4d57-a9f9-3b68bd9dcac8
 begin
@@ -695,7 +704,7 @@ end
 
 # ╔═╡ 2617f478-5556-4ab1-a506-a0a7bc0238cc
 md""" 
-## Mountain Schär
+# Mountain Schär
 
 The mountain profile for the following test case is
 
@@ -729,8 +738,8 @@ end
 	mesh_schar = mountain_schar_profile(); nothing
 end
 
-# ╔═╡ ccf20f9d-4d65-42d8-ac06-9d13bd3b803f
-md"""#### Mesh for the mountain Schär"""
+# ╔═╡ 476ef7a5-c642-4c48-b698-06613cddca12
+md"""## Mesh for the Mountain Schär"""
 
 # ╔═╡ a45a1305-faa2-4c6e-a79b-9c771e7ff7ec
 function source_terms_rayleigh(u, x, t, equations::CompressibleEulerEquations2D)
@@ -820,7 +829,7 @@ begin
 end
 
 # ╔═╡ 357c4a08-4dea-4802-86c2-12558dcfa001
-md"""#### Solution mountain Schär at T = 1 h"""
+md"""## Solution mountain Schär at T = 1 h"""
 
 # ╔═╡ f91c4f28-38b1-4267-8c97-d494f4535cb9
 begin
@@ -878,7 +887,7 @@ As an example, here is shown a generic mountain profile given by single data poi
 
 # ╔═╡ 3427fa7c-41f6-4b08-af59-3eb9d72a7f1a
 md"""
-# Conclusions
+# Summary and conclusions
 
 There are other features of Trixi.jl that were not mentioned here, such as
 
@@ -887,6 +896,8 @@ There are other features of Trixi.jl that were not mentioned here, such as
 - SVG to mesh via HOHQ Mesh.
 
 - [TrixiAtmo.jl](https://github.com/trixi-framework/TrixiAtmo.jl)
+
+- Moist Euler simulations
 
 - Simulations on icosahedron and cubed sphere for Earth modeling.
 
@@ -915,7 +926,7 @@ Trixi = "~0.9.14"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.2"
+julia_version = "1.10.5"
 manifest_format = "2.0"
 project_hash = "2e11f51230cdb92206e6be2e335b7d03f218c35e"
 
@@ -1174,7 +1185,7 @@ weakdeps = ["Dates", "LinearAlgebra"]
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "1.1.0+0"
+version = "1.1.1+0"
 
 [[deps.CompositionsBase]]
 git-tree-sha1 = "802bb88cd69dfd1509f6670416bd4434015693ad"
@@ -3640,7 +3651,7 @@ version = "0.15.2+0"
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
-version = "5.8.0+1"
+version = "5.11.0+0"
 
 [[deps.libdecor_jll]]
 deps = ["Artifacts", "Dbus_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pango_jll", "Wayland_jll", "xkbcommon_jll"]
@@ -3733,7 +3744,7 @@ version = "1.4.1+2"
 
 # ╔═╡ Cell order:
 # ╟─ad6ddb85-006a-4ee6-92da-4f56ea4780b0
-# ╠═fe03cfcd-bd4b-4c77-99b4-719f51dbe893
+# ╟─fe03cfcd-bd4b-4c77-99b4-719f51dbe893
 # ╟─065746f1-1deb-49c4-854d-457a8f7919c2
 # ╟─2f015b91-8c8a-42c7-8264-d4c722591b64
 # ╟─482f659c-ffbe-44db-bf95-a7bdd86c0640
@@ -3752,7 +3763,7 @@ version = "1.4.1+2"
 # ╟─4e055027-c7b4-4086-8a8c-a19bf97769c5
 # ╠═0e50dafd-a179-4c22-8afa-fa96cd45ff43
 # ╟─fdd7e368-c826-49ac-aa9a-5002d0a0cae7
-# ╠═d53556c2-a1d3-48c4-a265-2d0a61b5ec9a
+# ╟─d53556c2-a1d3-48c4-a265-2d0a61b5ec9a
 # ╠═ff35fbf5-53fd-4e9f-9090-5aab89812b31
 # ╠═00f13c5c-9c81-4a68-8885-473d3d61bbf4
 # ╟─22a5f545-e62e-4594-92ba-7d7c90d172d4
@@ -3774,15 +3785,19 @@ version = "1.4.1+2"
 # ╠═98a46c89-8805-4461-8528-3bd5f4433e31
 # ╟─d9f92197-b9dc-4820-aca0-ad3dd2e30080
 # ╠═9051a970-0f5f-4019-b8ee-37b44753865b
+# ╟─a523d66d-2c10-4721-b28e-dbb565f5f958
 # ╠═28175473-1386-483f-9443-817cad9fd53e
 # ╠═f2d35fb1-cba0-419b-b3fc-3fee9a152532
 # ╟─498d3262-df89-408e-8ede-f32268894709
 # ╟─7ea5ea01-2cbc-4f0c-9d8b-64a1fc83294c
 # ╠═029a886b-edec-4238-85a2-39f10dde3f5f
+# ╟─a9820dab-1cfd-4f17-ba76-8c5a202be9f0
 # ╟─7ebed9ca-8f57-4971-a274-bb816437642f
+# ╟─a24ec0ef-ab4c-4387-961f-a3822b86c266
 # ╟─c886e8ca-8506-4848-a342-2613747cddb1
 # ╟─ef5bba7b-2406-4e82-b509-8cace58bf508
-# ╟─d74493e3-747a-42ac-86ec-3f2b0d01eabb
+# ╠═d74493e3-747a-42ac-86ec-3f2b0d01eabb
+# ╟─4a00ea10-8315-4072-b3ee-1b6b35d72331
 # ╟─e507bb22-287a-46ac-9932-745a103578d2
 # ╟─fc94d662-30cd-4ef9-9a2e-3df9c4e8a498
 # ╠═5b9eaae3-9278-485d-a119-40004f7bfaec
@@ -3793,7 +3808,7 @@ version = "1.4.1+2"
 # ╟─9455e131-3968-4d57-a9f9-3b68bd9dcac8
 # ╟─2617f478-5556-4ab1-a506-a0a7bc0238cc
 # ╟─e44793c5-aa7c-4b64-bdc7-52a6bd60980c
-# ╟─ccf20f9d-4d65-42d8-ac06-9d13bd3b803f
+# ╟─476ef7a5-c642-4c48-b698-06613cddca12
 # ╟─5533f9d4-8ce1-489b-adad-6016bc003e2e
 # ╟─a45a1305-faa2-4c6e-a79b-9c771e7ff7ec
 # ╟─19818181-c2f4-4824-8eed-f938a3b204cf
