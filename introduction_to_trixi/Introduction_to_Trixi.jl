@@ -309,9 +309,15 @@ end
 # ╔═╡ 2d612d09-5f5e-4947-944a-269dc5bf7116
 html"""
 <h1 class="title-heading"> <center> Introduction to Trixi.jl </h1> </center>
-<h5 class="custom-heading"> <center> Arpit Babbar</center> </h5>
-<h5 class="subsubtitle-heading"> <center> Postdoctoral researcher </center> </h5>
-<h5 class="subsubtitle-heading"> <center> Numerical Mathematics, JGU Mainz </center> </h5>
+"""
+
+# ╔═╡ c46a116a-ecf1-4b91-8750-e5b0d9a5089a
+html"""
+<center>
+<h5 class="subsubtitle-heading">Arpit Babbar</h5>
+<h5 class="subsubtitle-heading"><center>Postdoctoral researcher</h5>
+<h5 class="subsubtitle-heading"><center>Numerical Mathematics, JGU Mainz</h5>
+</center>
 """
 
 # ╔═╡ ed2d8c29-043f-41ee-bddf-dc0792abfb15
@@ -333,7 +339,7 @@ Flow-Gravity
 """
 
 # ╔═╡ 1b323e44-0362-4c5b-8a54-f85f0c3d67c9
-html"""<ul style="font-size:0.9vw">
+html"""<ul style="font-size:1.2vw">
 <li> Flow-gravity simulation with adaptive mesh refinement. </li>
 <li> Multi-physics coupling with less than 350 lines of code. </li>
 """
@@ -474,11 +480,16 @@ $$\Huge \boldsymbol{u}_t + \boldsymbol{f}(\boldsymbol{u})_x + \boldsymbol{g}(\bo
 """
 
 # ╔═╡ 25effd11-7181-45ac-9ecd-8477edc2092c
+begin
 html"""
 <center>
-<img width = 1200 src="https://gist.github.com/Arpit-Babbar/6f8e445d9126f41aa96c9e2b5fb0bc99/raw/d7c91cc84e7ac56af8fac29b13949fcbad873032/dg.png">
+<img width = 600 src="https://gist.github.com/Arpit-Babbar/6f8e445d9126f41aa96c9e2b5fb0bc99/raw/d7c91cc84e7ac56af8fac29b13949fcbad873032/dg.png">
 </center>
 """
+# md"""
+# 	[](https://gist.githubusercontent.com/Arpit-Babbar/6f8e445d9126f41aa96c9e2b5fb0bc99/raw/d1a644ae8579cdf78a67ed5730fac5e1e82a31da/baroclinic_2.png)
+# 	"""
+end
 
 # ╔═╡ d0192377-25d2-4c47-87a8-ccd5c9fcc4e1
 html"""
@@ -578,7 +589,9 @@ html"""<h1> <center> Collect spatial discretization data structures </center> </
 # ╔═╡ e69ca0f9-0f67-4c75-965c-a966f8d33747
 begin
 	# A semidiscretization collects data structures and functions for the spatial discretization
-	semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition_convergence_test, solver)
+	semi = SemidiscretizationHyperbolic(mesh, equations, 
+										initial_condition_convergence_test, 
+										solver)
 	
 	# Create ODE problem with time span from 0.0 to 1.0
 	
@@ -639,7 +652,7 @@ html"""
 md"""
 1. Babbar, Chandrashekar, Lax-Wendroff Flux Reconstruction on adaptive curvilinear meshes with error based time stepping for hyperbolic conservation laws, Journal of Computational Physics (522), 113622, 2025.
 2. Babbar, Chandrashekar, Multi-Derivative Runge-Kutta Flux Reconstruction for Hyperbolic Conservation Laws, to appear in Communications on Applied Mathematics and Computation.
-3. Babbar, Chandrashekar, Multi-Derivative Runge-Kutta Flux Reconstruction for Hyperbolic Conservation Laws, to appear in ICOSAHOM-2023 proceedings."""
+3. Babbar, Chandrashekar, Lax-Wendroff Flux Reconstruction for advection-diffusion equations with error-based time stepping, to appear in ICOSAHOM-2023 proceedings."""
 
 # ╔═╡ 24aca1ce-4907-40cd-b22c-c13b5b9218d8
 html"""
@@ -650,7 +663,7 @@ html"""
 html"""<center>
 <font size = "4">
 In collaboration with <br> <br>
-Peter Spictinger (Institute for Atmospheric Physics, JGU Mainz) <br>
+Peter Spichtinger (Institute for Atmospheric Physics, JGU Mainz) <br>
 Hendrik Ranocha (Numerical Mathematics, JGU Mainz)
 </font>
 </center>
@@ -664,13 +677,13 @@ begin
 	kb() = 1.3806488e-23        # Boltzmann constant (J/K)
 	t00() = 273.15              # Reference temperature (K)
 	na() = 6.02214129e23        # Avogadro constant
-	r_ideal() = kb() * na()         # Universal gas constant (J/(mol*K))
+	r_ideal() = kb() * na()     # Universal gas constant (J/(mol*K))
 	md_mol() = 28.9644e-3       # Molecular weight of dry air (kg/mol)
-	rd() = r_ideal() / md_mol()     # Specific gas constant for dry air (J/(kg*K))
+	rd() = r_ideal() / md_mol() # Specific gas constant for dry air (J/(kg*K))
 	g() = 9.81                  # Gravitational acceleration (m/s^2)
 	p00() = 1e5                 # Reference pressure (Pa)
 	kappa() = 2 / 7             # Adiabatic constant for dry air
-    hp() = rd() * t00() / g()               # Pressure scale height
+    hp() = rd() * t00() / g()   # Pressure scale height
 	
 	function f_profile(z)
 	  bv21, bv22, bv23, bv24 = 0.65e-4, 0.15e-4, 1.20e-4, 4.50e-4
@@ -752,6 +765,11 @@ end
 # ╔═╡ 75b94704-704b-4250-bfdd-b914fd9eb1b5
 html"""<h1><center>Boundary and sources </h1></center> """
 
+# ╔═╡ a7dbb804-eeeb-4f6a-b289-7ea9b124e048
+md"""
+$$\boldsymbol s(\boldsymbol u) = (0, 0, -g \rho, -g \rho v_2)$$
+"""
+
 # ╔═╡ 92acf048-969c-4410-8dd2-ecfb08081dee
 begin
 	boundary_conditions = (;
@@ -822,9 +840,8 @@ html"""
 """
 
 # ╔═╡ 73673166-cd9a-11ef-151e-a3cfa58f09ad
-md"""
-# Appendix
-
+html"""
+<h1 class="custom-heading"><center>Appendix</center></h1>
 You can find code and utility material in this appendix.
 """
 
@@ -3296,6 +3313,7 @@ version = "1.4.1+2"
 
 # ╔═╡ Cell order:
 # ╟─2d612d09-5f5e-4947-944a-269dc5bf7116
+# ╟─c46a116a-ecf1-4b91-8750-e5b0d9a5089a
 # ╟─ed2d8c29-043f-41ee-bddf-dc0792abfb15
 # ╟─7fcc373f-ba04-4df9-a4ed-49313999ae6f
 # ╟─b94d039d-1114-406a-87da-63f955e68188
@@ -3349,13 +3367,14 @@ version = "1.4.1+2"
 # ╟─9a29aee6-4af2-485a-9694-7a7099d7e3d5
 # ╠═53963c2e-9049-41ed-86ac-d858ad9fd072
 # ╟─75b94704-704b-4250-bfdd-b914fd9eb1b5
+# ╟─a7dbb804-eeeb-4f6a-b289-7ea9b124e048
 # ╠═92acf048-969c-4410-8dd2-ecfb08081dee
 # ╟─461d1423-a785-40da-9492-c08f2a9317d5
 # ╠═8b9c7b78-c047-45e7-8e4a-9ed0628d04a4
 # ╟─c5e96cf0-b425-48f1-9818-18974e8f6e87
 # ╠═eae9f00e-2a4c-4fc6-bb8f-144ca63a24a3
 # ╟─6b950f4b-6c39-4dc6-a15f-669eb57820bc
-# ╠═73673166-cd9a-11ef-151e-a3cfa58f09ad
+# ╟─73673166-cd9a-11ef-151e-a3cfa58f09ad
 # ╠═41a037f2-3ce9-4218-bd83-40c3f956950d
 # ╠═c6f31da3-7d64-4583-a34c-7cda5673d488
 # ╠═b35ae27b-e78a-4c42-8207-a143cd642e6a
